@@ -27,27 +27,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if ($action === 'update_status' && $targetUserId) {
     $status = $_POST['status'] ?? '';
-    if (in_array($status, ['active', 'inactive', 'suspended'])) {
-      $stmt = $db->prepare("UPDATE users SET status = ?, updated_at = NOW() WHERE id = ?");
-      if ($stmt->execute([$status, $targetUserId])) {
+    if (in_array($status, ['active', 'inactive'])) {
+      $isActive = ($status === 'active') ? 1 : 0;
+      $stmt = $db->prepare("UPDATE users SET is_active = ?, updated_at = NOW() WHERE id = ?");
+      if ($stmt->execute([$isActive, $targetUserId])) {
         $message = 'User status updated successfully.';
         $messageType = 'success';
       } else {
         $message = 'Error updating user status.';
-        $messageType = 'error';
-      }
-    }
-  }
-
-  if ($action === 'update_role' && $targetUserId) {
-    $newRole = intval($_POST['role'] ?? 0);
-    if (in_array($newRole, [ROLE_ADMIN, ROLE_HR, ROLE_SEEKER])) {
-      $stmt = $db->prepare("UPDATE users SET role = ?, updated_at = NOW() WHERE id = ?");
-      if ($stmt->execute([$newRole, $targetUserId])) {
-        $message = 'User role updated successfully.';
-        $messageType = 'success';
-      } else {
-        $message = 'Error updating user role.';
         $messageType = 'error';
       }
     }
@@ -59,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $message = 'You cannot delete your own account.';
       $messageType = 'error';
     } else {
-      // Soft delete or hard delete
-      $stmt = $db->prepare("UPDATE users SET status = 'deleted', updated_at = NOW() WHERE id = ?");
+      // Soft delete - set is_active to 0
+      $stmt = $db->prepare("UPDATE users SET is_active = 0, updated_at = NOW() WHERE id = ?");
       if ($stmt->execute([$targetUserId])) {
         $message = 'User deleted successfully.';
         $messageType = 'success';
@@ -150,7 +137,7 @@ include '../includes/header.php';
       </div>
       <h3><?php echo htmlspecialchars($_SESSION['user_email'] ?? 'Admin'); ?></h3>
       <span class="role-badge admin">Administrator</span>
-      </div>
+    </div>
 
     <nav class="sidebar-nav">
       <a href="<?php echo BASE_URL; ?>/admin/index.php" class="nav-item">
@@ -181,10 +168,10 @@ include '../includes/header.php';
 
     <div class="sidebar-footer">
       <a href="<?php echo BASE_URL; ?>/auth/logout.php" class="logout-btn">
-    <i class="fas fa-sign-out-alt"></i>
-    <span>Logout</span>
-  </a>
-</div>
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </a>
+    </div>
   </aside>
 
   <!-- Main Content -->
@@ -195,9 +182,9 @@ include '../includes/header.php';
         <p>Manage all users and their access levels</p>
       </div>
       <div class="header-right">
-        <button class="btn btn-primary" onclick="openModal('addUserModal')">
+        <!-- <button class="btn btn-primary" onclick="openModal('addUserModal')">
           <i class="fas fa-user-plus"></i> Add User
-        </button>
+        </button> -->
       </div>
     </div>
 
@@ -274,16 +261,15 @@ include '../includes/header.php';
             <option value="">All Status</option>
             <option value="active" <?php echo $statusFilter === 'active' ? 'selected' : ''; ?>>Active</option>
             <option value="inactive" <?php echo $statusFilter === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-            <option value="suspended" <?php echo $statusFilter === 'suspended' ? 'selected' : ''; ?>>Suspended</option>
           </select>
         </div>
         <div class="filter-actions">
           <button type="submit" class="btn btn-primary">
             <i class="fas fa-search"></i> Filter
           </button>
-        <?php if ($search || $roleFilter || $statusFilter): ?>
-          <a href="users.php" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
-        <?php endif; ?>
+          <?php if ($search || $roleFilter || $statusFilter): ?>
+            <a href="users.php" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
+          <?php endif; ?>
         </div>
       </form>
     </div>
@@ -420,33 +406,12 @@ include '../includes/header.php';
           <select name="status" id="editUserStatus">
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
-            <option value="suspended">Suspended</option>
           </select>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn btn-ghost" onclick="closeModal('editUserModal')">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Changes</button>
-        </div>
-      </form>
-
-      <hr style="margin: 1.5rem 0; border-color: rgba(255,255,255,0.1);">
-
-      <form method="POST">
-        <input type="hidden" name="action" value="update_role">
-        <input type="hidden" name="user_id" id="editUserIdRole">
-
-        <div class="form-group">
-          <label>Change Role</label>
-          <select name="role" id="editUserRole">
-            <option value="<?php echo ROLE_SEEKER; ?>">Job Seeker</option>
-            <option value="<?php echo ROLE_HR; ?>">HR Manager</option>
-            <option value="<?php echo ROLE_ADMIN; ?>">Administrator</option>
-          </select>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn btn-warning">Update Role</button>
         </div>
       </form>
     </div>
@@ -479,8 +444,15 @@ include '../includes/header.php';
 
 <style>
   /* Page-specific overrides only - most styles come from dashboard.css */
-  .stat-card.info .stat-icon { background: rgba(100, 181, 246, 0.15); color: #64b5f6; }
-  .stat-card.purple .stat-icon { background: rgba(186, 104, 200, 0.15); color: #ba68c8; }
+  .stat-card.info .stat-icon {
+    background: rgba(100, 181, 246, 0.15);
+    color: #64b5f6;
+  }
+
+  .stat-card.purple .stat-icon {
+    background: rgba(186, 104, 200, 0.15);
+    color: #ba68c8;
+  }
 </style>
 
 <script>
@@ -500,10 +472,8 @@ include '../includes/header.php';
     const user = typeof userData === 'string' ? JSON.parse(userData) : userData;
 
     document.getElementById('editUserId').value = user.id;
-    document.getElementById('editUserIdRole').value = user.id;
     document.getElementById('editUserName').value = user.email;
-    document.getElementById('editUserStatus').value = user.is_active;
-    document.getElementById('editUserRole').value = user.role;
+    document.getElementById('editUserStatus').value = user.is_active ? 'active' : 'inactive';
 
     openModal('editUserModal');
   }

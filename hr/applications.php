@@ -9,6 +9,7 @@ require_once '../classes/Database.php';
 require_once '../classes/User.php';
 require_once '../classes/Job.php';
 require_once '../classes/Application.php';
+require_once '../classes/Company.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== ROLE_HR) {
   header('Location: ' . BASE_URL . '/auth/login.php?redirect=hr/applications');
@@ -18,10 +19,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== ROLE_HR) {
 $db = Database::getInstance()->getConnection();
 $userModel = new User();
 $applicationModel = new Application();
+$companyModel = new Company();
 
 $hr = $userModel->findById($_SESSION['user_id']);
+$company = $companyModel->findByHRUserId($_SESSION['user_id']);
 
-if (!$hr['is_verified']) {
+// Check if company is verified
+if (!$company || $company['verification_status'] !== 'verified') {
   header('Location: ' . BASE_URL . '/hr/index.php');
   exit;
 }
@@ -122,11 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 $pageTitle = 'Applications';
 require_once '../includes/header.php';
-
-// Get company info for sidebar
-$stmt = $db->prepare("SELECT * FROM companies WHERE hr_user_id = ?");
-$stmt->execute([$_SESSION['user_id']]);
-$company = $stmt->fetch(PDO::FETCH_ASSOC);
 ?>
 
 <div class="dashboard-container">

@@ -138,8 +138,8 @@ require_once '../includes/header.php';
       </a>
       <?php
       $statuses = [
-        'pending' => ['label' => 'Pending', 'icon' => 'clock', 'color' => 'warning'],
-        'reviewed' => ['label' => 'Reviewed', 'icon' => 'eye', 'color' => 'info'],
+        'applied' => ['label' => 'Applied', 'icon' => 'paper-plane', 'color' => 'warning'],
+        'viewed' => ['label' => 'Viewed', 'icon' => 'eye', 'color' => 'info'],
         'shortlisted' => ['label' => 'Shortlisted', 'icon' => 'star', 'color' => 'primary'],
         'interview' => ['label' => 'Interview', 'icon' => 'calendar', 'color' => 'purple'],
         'offered' => ['label' => 'Offered', 'icon' => 'gift', 'color' => 'success'],
@@ -240,9 +240,12 @@ require_once '../includes/header.php';
             </div>
 
             <div class="card-right">
+              <?php
+              $statusInfo = $statuses[$app['status']] ?? ['label' => ucfirst($app['status']), 'icon' => 'circle'];
+              ?>
               <div class="status-badge <?php echo $app['status']; ?>">
-                <i class="fas fa-<?php echo $statuses[$app['status']]['icon']; ?>"></i>
-                <?php echo $statuses[$app['status']]['label']; ?>
+                <i class="fas fa-<?php echo $statusInfo['icon']; ?>"></i>
+                <?php echo $statusInfo['label']; ?>
               </div>
 
               <?php if ($app['status'] === 'interview'): ?>
@@ -552,12 +555,12 @@ require_once '../includes/header.php';
     gap: 0.5rem;
   }
 
-  .status-badge.pending {
+  .status-badge.applied {
     background: rgba(255, 193, 7, 0.15);
     color: #FFC107;
   }
 
-  .status-badge.reviewed {
+  .status-badge.viewed {
     background: rgba(33, 150, 243, 0.15);
     color: #2196F3;
   }
@@ -578,7 +581,8 @@ require_once '../includes/header.php';
     color: #4CAF50;
   }
 
-  .status-badge.rejected {
+  .status-badge.rejected,
+  .status-badge.withdrawn {
     background: rgba(244, 67, 54, 0.15);
     color: #F44336;
   }

@@ -70,11 +70,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_action'])) {
 // Get saved jobs with details
 $stmt = $db->prepare("
     SELECT j.*, c.company_name, c.logo as company_logo, c.headquarters as company_location,
-           sj.saved_at,
+           sj.saved_at, cat.name as category_name,
            (SELECT COUNT(*) FROM applications WHERE job_id = j.id AND seeker_id = ?) as applied
     FROM saved_jobs sj
     JOIN jobs j ON sj.job_id = j.id
     JOIN companies c ON j.company_id = c.id
+    LEFT JOIN job_categories cat ON j.category_id = cat.id
     WHERE sj.user_id = ?
     ORDER BY sj.saved_at DESC
 ");
@@ -84,8 +85,8 @@ $savedJobs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Get job categories for filtering
 $categories = [];
 foreach ($savedJobs as $sj) {
-  if (!in_array($sj['category'], $categories)) {
-    $categories[] = $sj['category'];
+  if (!empty($sj['category_name']) && !in_array($sj['category_name'], $categories)) {
+    $categories[] = $sj['category_name'];
   }
 }
 
@@ -293,7 +294,7 @@ include '../includes/header.php';
           $isExpiringSoon = $deadline && $daysLeft <= 3 && $isActive;
           ?>
                               <div class="glass-card saved-job-card <?php echo !$isActive ? 'expired' : ''; ?>"
-            data-category="<?php echo htmlspecialchars($sj['category']); ?>"
+            data-category="<?php echo htmlspecialchars($sj['category_name'] ?? ''); ?>"
             data-status="<?php echo $isActive ? ($isApplied ? 'applied' : 'active') : 'expired'; ?>"
             data-saved="<?php echo strtotime($sj['saved_at']); ?>"
             data-deadline="<?php echo $sj['application_deadline'] ? strtotime($sj['application_deadline']) : ''; ?>"
@@ -351,7 +352,7 @@ include '../includes/header.php';
               </span>
               <span class="tag">
                 <i class="fas fa-tag"></i>
-                <?php echo htmlspecialchars($sj['category']); ?>
+                <?php echo htmlspecialchars($sj['category_name'] ?? 'General'); ?>
               </span>
               <?php if ($sj['experience_level']): ?>
                 <span class="tag">

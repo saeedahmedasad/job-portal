@@ -1,15 +1,18 @@
 <?php
-session_start();
-require_once '../config/database.php';
-require_once '../includes/functions.php';
+/**
+ * JobNexus - Admin Reports & Analytics
+ */
+
+require_once '../config/config.php';
+require_once '../classes/Database.php';
 
 // Check admin access
-if (!isLoggedIn() || !isAdmin()) {
-  redirect('/auth/login.php');
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== ROLE_ADMIN) {
+  header('Location: ' . BASE_URL . '/auth/login.php');
+  exit;
 }
 
-$database = new Database();
-$db = $database->getConnection();
+$db = Database::getInstance()->getConnection();
 
 // Get date range filter
 $dateRange = $_GET['range'] ?? '30days';

@@ -119,41 +119,47 @@ include __DIR__ . '/../includes/header.php';
                     <div class="form-row">
                         <div class="form-group">
                             <label for="first_name" class="form-label required">First Name</label>
-                            <input 
-                                type="text" 
-                                id="first_name" 
-                                name="first_name" 
-                                class="form-control" 
-                                placeholder="John"
-                                value="<?php echo sanitize($formData['first_name']); ?>"
-                            >
+                            <div class="input-group">
+                                <i class="fas fa-user input-icon"></i>
+                                <input 
+                                    type="text" 
+                                    id="first_name" 
+                                    name="first_name" 
+                                    class="form-control" 
+                                    placeholder="John"
+                                    value="<?php echo sanitize($formData['first_name']); ?>">
+                                </div>
                         </div>
                         <div class="form-group">
                             <label for="last_name" class="form-label required">Last Name</label>
-                            <input 
-                                type="text" 
-                                id="last_name" 
-                                name="last_name" 
-                                class="form-control" 
-                                placeholder="Doe"
-                                value="<?php echo sanitize($formData['last_name']); ?>"
-                            >
-                        </div>
-                    </div>
+                            <div class="input-group">
+                                <i class="fas fa-user input-icon"></i>
+                                <input 
+                                    type="text" 
+                                    id="last_name" 
+                                    name="last_name" 
+                                    class="form-control" 
+                                    placeholder="Doe"
+                                    value="<?php echo sanitize($formData['last_name']); ?>">
+                                </div>
+                                </div>
+                                </div>
                 </div>
                 
                 <!-- Employer Fields -->
                 <div id="hrFields" class="role-fields <?php echo $formData['role'] === ROLE_HR ? 'active' : ''; ?>">
                     <div class="form-group">
                         <label for="company_name" class="form-label required">Company Name</label>
-                        <input 
-                            type="text" 
-                            id="company_name" 
-                            name="company_name" 
-                            class="form-control" 
-                            placeholder="Your Company Inc."
-                            value="<?php echo sanitize($formData['company_name']); ?>"
-                        >
+                        <div class="input-group">
+                            <i class="fas fa-building input-icon"></i>
+                            <input 
+                                type="text" 
+                                id="company_name" 
+                                name="company_name" 
+                                class="form-control" 
+                                placeholder="Your Company Inc."
+                                value="<?php echo sanitize($formData['company_name']); ?>">
+                            </div>
                     </div>
                     
                     <div class="form-row">
@@ -170,13 +176,16 @@ include __DIR__ . '/../includes/header.php';
                         </div>
                         <div class="form-group">
                             <label for="website" class="form-label">Website</label>
-                            <input 
-                                type="url" 
-                                id="website" 
-                                name="website" 
-                                class="form-control" 
-                                placeholder="https://example.com"
-                            >
+                            <div class="input-group">
+                                <i class="fas fa-globe input-icon"></i>
+                                <input 
+                                    type="url" 
+                                    id="website" 
+                                    name="website" 
+                                    class="form-control" 
+                                    placeholder="https://example.com"
+                                >
+                            </div>
                         </div>
                     </div>
                     
@@ -252,6 +261,7 @@ include __DIR__ . '/../includes/header.php';
                 <div class="form-group">
                     <label class="form-check">
                         <input type="checkbox" name="agree_terms" class="form-check-input" required>
+                        <span class="checkmark"></span>
                         <span>I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a></span>
                     </label>
                 </div>
@@ -810,30 +820,83 @@ include __DIR__ . '/../includes/header.php';
     color: var(--accent-primary);
 }
 
-/* Terms Checkbox */
+/* Custom Checkbox */
 .form-check {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
     margin: var(--spacing-md) 0;
+    user-select: none;
 }
 
 .form-check input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    margin-top: 2px;
-    accent-color: var(--accent-primary);
+    position: absolute;
+    opacity: 0;
     cursor: pointer;
+    height: 0;
+    width: 0;
 }
 
-.form-check label {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    cursor: pointer;
+.form-check .checkmark {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    width: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
 }
 
-.form-check label a {
+.form-check:hover .checkmark {
+    border-color: var(--accent-primary);
+    background: rgba(0, 230, 118, 0.1);
+}
+
+.form-check input:checked + .checkmark {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.form-check .checkmark:after {
+    content: '';
+    position: absolute;
+    display: none;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid var(--bg-primary);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.form-check input:checked + .checkmark:after {
+    display: block;
+}
+
+.form-check > span:last-child {
+    display: inline;
+}
+
+.form-check a {
     color: var(--accent-primary);
+    text-decoration: none;
+    transition: opacity var(--transition-fast);
+}
+
+.form-check a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
 }
 
 /* Responsive */

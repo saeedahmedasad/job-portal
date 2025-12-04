@@ -32,9 +32,10 @@ if (!$company || $company['verification_status'] !== 'verified') {
 
 // Get active jobs for this company
 $stmt = $db->prepare("
-    SELECT j.*, 
+    SELECT j.*, jc.name as category_name,
            (SELECT COUNT(*) FROM applications WHERE job_id = j.id) as application_count
     FROM jobs j 
+    LEFT JOIN job_categories jc ON j.category_id = jc.id
     WHERE j.company_id = ? AND j.status = 'active'
     ORDER BY j.created_at DESC
 ");
@@ -188,7 +189,7 @@ include '../includes/header.php';
                       <?php endif; ?>
                     </div>
                     <div class="job-tags">
-                      <span class="category-tag"><?php echo htmlspecialchars($job['category']); ?></span>
+                      <span class="category-tag"><?php echo htmlspecialchars($job['category_name'] ?? 'General'); ?></span>
                       <?php if ($job['experience_level']): ?>
                         <span class="experience-tag"><?php echo ucfirst($job['experience_level']); ?></span>
                       <?php endif; ?>

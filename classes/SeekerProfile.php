@@ -229,6 +229,10 @@ class SeekerProfile
    */
   public function addExperience(int $seekerId, array $data): ?int
   {
+    // Convert date formats to MySQL format (YYYY-MM-DD)
+    $startDate = $this->formatDateForMySQL($data['start_date']);
+    $endDate = !empty($data['end_date']) ? $this->formatDateForMySQL($data['end_date']) : null;
+
     $sql = "INSERT INTO experience (
             seeker_id, job_title, company_name, location, location_type,
             start_date, end_date, is_current, description, achievements
@@ -244,8 +248,8 @@ class SeekerProfile
       'company_name' => $data['company_name'],
       'location' => $data['location'] ?? null,
       'location_type' => $data['location_type'] ?? 'onsite',
-      'start_date' => $data['start_date'],
-      'end_date' => $data['end_date'] ?? null,
+      'start_date' => $startDate,
+      'end_date' => $endDate,
       'is_current' => $data['is_current'] ?? 0,
       'description' => $data['description'] ?? null,
       'achievements' => isset($data['achievements']) ? json_encode($data['achievements']) : null
@@ -253,6 +257,38 @@ class SeekerProfile
 
     $this->calculateCompletion($seekerId);
     return (int) $this->db->lastInsertId();
+  }
+
+  /**
+   * Convert various date formats to MySQL format (YYYY-MM-DD)
+   */
+  private function formatDateForMySQL($date): ?string
+  {
+    if (empty($date)) {
+      return null;
+    }
+
+    // If already in YYYY-MM-DD format
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+      return $date;
+    }
+
+    // Try to parse various formats
+    $formats = ['d-m-Y', 'd/m/Y', 'm-d-Y', 'm/d/Y', 'Y/m/d'];
+    foreach ($formats as $format) {
+      $parsed = \DateTime::createFromFormat($format, $date);
+      if ($parsed !== false) {
+        return $parsed->format('Y-m-d');
+      }
+    }
+
+    // Try strtotime as fallback
+    $timestamp = strtotime($date);
+    if ($timestamp !== false) {
+      return date('Y-m-d', $timestamp);
+    }
+
+    return null;
   }
 
   /**
@@ -268,6 +304,8 @@ class SeekerProfile
         $fields[] = "$key = :$key";
         if ($key === 'achievements' && is_array($value)) {
           $params[$key] = json_encode($value);
+        } elseif (($key === 'start_date' || $key === 'end_date') && !empty($value)) {
+          $params[$key] = $this->formatDateForMySQL($value);
         } else {
           $params[$key] = $value;
         }

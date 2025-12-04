@@ -46,9 +46,10 @@ $stmt = $db->prepare("
     JOIN jobs j ON a.job_id = j.id
     JOIN companies c ON j.company_id = c.id
     JOIN users u ON e.hr_user_id = u.id
-    WHERE a.seeker_user_id = ? 
+    WHERE a.seeker_id = ? 
     AND MONTH(e.event_date) = ? 
     AND YEAR(e.event_date) = ?
+    AND e.status = 'scheduled'
     ORDER BY e.event_date ASC, e.event_time ASC
 ");
 $stmt->execute([$userId, $currentMonth, $currentYear]);
@@ -76,13 +77,14 @@ $stmt = $db->prepare("
     WHERE e.seeker_user_id = ? 
     AND e.event_date >= CURDATE()
     AND e.event_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+    AND e.status = 'scheduled'
     ORDER BY e.event_date ASC, e.event_time ASC
     LIMIT 10
 ");
 $stmt->execute([$userId]);
 $upcomingEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get past interviews (last 30 days)
+// Get past interviews (last 30 days) - show completed, exclude cancelled
 $stmt = $db->prepare("
     SELECT e.*, j.title as job_title, c.company_name, a.status as application_status
     FROM events e
@@ -91,6 +93,7 @@ $stmt = $db->prepare("
     JOIN companies c ON j.company_id = c.id
     WHERE e.seeker_user_id = ? 
     AND e.event_date < CURDATE()
+    AND e.status != 'cancelled'
     ORDER BY e.event_date DESC
     LIMIT 5
 ");
@@ -257,7 +260,7 @@ include '../includes/header.php';
                   echo '<div class="event-dots">';
                   foreach (array_slice($dayEvents, 0, 3) as $evt) {
                     $color = $evt['event_type'] === 'interview' ? 'primary' : 'warning';
-                    echo '<span class="event-dot ' . $color . '" title="' . htmlspecialchars($evt['title']) . '"></span>';
+                    echo '<span class="event-dot ' . $color . '" title="' . htmlspecialchars($evt['event_title']) . '"></span>';
                   }
                   if (count($dayEvents) > 3) {
                     echo '<span class="more-events">+' . (count($dayEvents) - 3) . '</span>';
@@ -331,7 +334,7 @@ include '../includes/header.php';
                     <?php endif; ?>
                   </div>
                   <div class="event-details">
-                    <h4><?php echo htmlspecialchars($evt['title']); ?></h4>
+                    <h4><?php echo htmlspecialchars($evt['event_title']); ?></h4>
                     <p class="job-title"><?php echo htmlspecialchars($evt['job_title']); ?></p>
                     <p class="company-name">
                       <i class="fas fa-building"></i>
@@ -848,33 +851,397 @@ include '../includes/header.php';
       flex-wrap: wrap;
     }
   }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+  }
+
+  .modal.active {
+    display: flex;
+  }
+
+  .modal-content {
+    position: relative;
+    background: var(--bg-card, #1e1e1e);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid var(--border-color, #2a2a2a);
+    margin: 1rem;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color, #2a2a2a);
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary, #fff);
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted, #666);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .modal-close:hover {
+    color: var(--error, #ff5252);
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  /* Event Detail Content */
+  .event-detail-content {
+    color: var(--text-primary, #fff);
+  }
+
+  .event-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color, #2a2a2a);
+  }
+
+  .event-detail-header h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--primary-color, #00E676);
+  }
+
+  .event-type-badge {
+    padding: 0.25rem 0.75rem;
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--primary-color, #00E676);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    text-transform: capitalize;
+  }
+
+  .event-detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .detail-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .detail-row > i {
+    width: 20px;
+    color: var(--primary-color, #00E676);
+    margin-top: 0.25rem;
+  }
+
+  .detail-row > div {
+    flex: 1;
+  }
+
+  .detail-row strong {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted, #666);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+  }
+
+  .detail-row p {
+    margin: 0;
+    color: var(--text-primary, #fff);
+    font-size: 0.95rem;
+  }
+
+  .meeting-link {
+    color: var(--primary-color, #00E676);
+    word-break: break-all;
+  }
+
+  .event-detail-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color, #2a2a2a);
+  }
+
+  .event-detail-actions .btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+  }
+
+  .event-detail-actions .btn-primary {
+    background: var(--primary-color, #00E676);
+    color: #000;
+    border: none;
+  }
+
+  .event-detail-actions .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border-color, #2a2a2a);
+    color: var(--text-primary, #fff);
+  }
+
+  .event-detail-actions .btn-outline:hover {
+    border-color: var(--primary-color, #00E676);
+    color: var(--primary-color, #00E676);
+  }
+
+  /* Day Events List */
+  .day-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .day-event-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .day-event-card:hover {
+    background: rgba(0, 230, 118, 0.1);
+    transform: translateX(4px);
+  }
+
+  .day-event-time {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary-color, #00E676);
+    min-width: 80px;
+  }
+
+  .day-event-info {
+    flex: 1;
+  }
+
+  .day-event-info h5 {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+    color: var(--text-primary, #fff);
+  }
+
+  .day-event-info p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted, #666);
+  }
+
+  .day-event-card > i {
+    color: var(--text-muted, #666);
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .text-muted {
+    color: var(--text-muted, #666);
+  }
 </style>
 
 <script>
+  // Store all events data for JavaScript access
+  const eventsData = <?php echo json_encode($monthEvents); ?>;
+    const upcomingEventsData = <?php echo json_encode($upcomingEvents); ?>;
+    const eventsByDate = <?php echo json_encode($eventsByDate); ?>;
+
   function showEventDetails(eventId) {
-    // In a real app, fetch event details via AJAX
     const modal = document.getElementById('eventModal');
     const body = document.getElementById('eventModalBody');
 
-    // For now, show a placeholder
+    // Find event in upcoming events or month events
+    let event = upcomingEventsData.find(e => e.id == eventId) || eventsData.find(e => e.id == eventId);
+
+    if (!event) {
+      body.innerHTML = `<div class="event-detail-content"><p>Event not found.</p></div>`;
+      modal.classList.add('active');
+      return;
+    }
+
+    const eventDate = new Date(event.event_date + 'T12:00:00');
+    const formattedDate = eventDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const eventTime = new Date('2000-01-01T' + event.event_time);
+    const formattedTime = eventTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
     body.innerHTML = `
-        <div class="event-detail-content">
-            <p><strong>Loading event details...</strong></p>
-            <p>Event ID: ${eventId}</p>
+      <div class="event-detail-content">
+        <div class="event-detail-header">
+          <h4>${escapeHtml(event.event_title || 'Interview')}</h4>
+          <span class="event-type-badge">${escapeHtml(event.event_type || 'interview')}</span>
         </div>
+        
+        <div class="event-detail-section">
+          <div class="detail-row">
+            <i class="fas fa-briefcase"></i>
+            <div>
+              <strong>Position</strong>
+              <p>${escapeHtml(event.job_title || 'N/A')}</p>
+            </div>
+          </div>
+          
+          <div class="detail-row">
+            <i class="fas fa-building"></i>
+            <div>
+              <strong>Company</strong>
+              <p>${escapeHtml(event.company_name || 'N/A')}</p>
+            </div>
+          </div>
+          
+          <div class="detail-row">
+            <i class="fas fa-calendar"></i>
+            <div>
+              <strong>Date</strong>
+              <p>${formattedDate}</p>
+            </div>
+          </div>
+          
+          <div class="detail-row">
+            <i class="fas fa-clock"></i>
+            <div>
+              <strong>Time</strong>
+              <p>${formattedTime} (${event.duration_minutes || 60} minutes)</p>
+            </div>
+          </div>
+          
+          ${event.location ? `
+          <div class="detail-row">
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+              <strong>Location</strong>
+              <p>${escapeHtml(event.location)}</p>
+            </div>
+          </div>
+          ` : ''}
+          
+          ${event.meeting_link ? `
+          <div class="detail-row">
+            <i class="fas fa-video"></i>
+            <div>
+              <strong>Meeting Link</strong>
+              <p><a href="${escapeHtml(event.meeting_link)}" target="_blank" class="meeting-link">${escapeHtml(event.meeting_link)}</a></p>
+            </div>
+          </div>
+          ` : ''}
+          
+          ${event.description ? `
+          <div class="detail-row">
+            <i class="fas fa-info-circle"></i>
+            <div>
+              <strong>Notes</strong>
+              <p>${escapeHtml(event.description)}</p>
+            </div>
+          </div>
+          ` : ''}
+        </div>
+        
+        <div class="event-detail-actions">
+          ${event.meeting_link ? `<a href="${escapeHtml(event.meeting_link)}" target="_blank" class="btn btn-primary"><i class="fas fa-video"></i> Join Meeting</a>` : ''}
+          <button onclick="addToCalendar(${JSON.stringify(event).replace(/"/g, '&quot;')})" class="btn btn-outline"><i class="fas fa-calendar-plus"></i> Add to Calendar</button>
+        </div>
+      </div>
     `;
 
     modal.classList.add('active');
   }
 
+  function showDayEvents(dateStr) {
+    const modal = document.getElementById('eventModal');
+    const body = document.getElementById('eventModalBody');
+    
+    const events = eventsByDate[dateStr] || [];
+    const date = new Date(dateStr + 'T12:00:00');
+    const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    
+    // Update modal title
+    document.querySelector('#eventModal .modal-header h3').textContent = formattedDate;
+    
+    if (events.length === 0) {
+      body.innerHTML = `<div class="event-detail-content"><p class="text-center text-muted">No interviews scheduled for this day.</p></div>`;
+    } else {
+      let html = '<div class="day-events-list">';
+      events.forEach(event => {
+        const eventTime = new Date('2000-01-01T' + event.event_time);
+        const formattedTime = eventTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        
+        html += `
+          <div class="day-event-card" onclick="showEventDetails(${event.id})">
+            <div class="day-event-time">${formattedTime}</div>
+            <div class="day-event-info">
+              <h5>${escapeHtml(event.event_title || 'Interview')}</h5>
+              <p>${escapeHtml(event.job_title || '')} at ${escapeHtml(event.company_name || '')}</p>
+            </div>
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        `;
+      });
+      html += '</div>';
+      body.innerHTML = html;
+    }
+    
+    modal.classList.add('active');
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
+    // Reset modal title
+    document.querySelector('#eventModal .modal-header h3').textContent = 'Interview Details';
   }
 
   function addToCalendar(event) {
     // Generate ICS file for download
     const startDate = new Date(event.event_date + 'T' + event.event_time);
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour duration
+    const endDate = new Date(startDate.getTime() + (event.duration_minutes || 60) * 60 * 1000);
 
     const formatDate = (date) => {
       return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -885,29 +1252,30 @@ VERSION:2.0
 BEGIN:VEVENT
 DTSTART:${formatDate(startDate)}
 DTEND:${formatDate(endDate)}
-SUMMARY:${event.title}
-DESCRIPTION:Interview for ${event.job_title} at ${event.company_name}
-LOCATION:${event.location || 'Online'}
+SUMMARY:${event.event_title || 'Interview'}
+DESCRIPTION:Interview for ${event.job_title || 'Position'} at ${event.company_name || 'Company'}
+LOCATION:${event.location || event.meeting_link || 'Online'}
 END:VEVENT
 END:VCALENDAR`;
 
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `interview-${event.job_title.replace(/\s+/g, '-')}.ics`;
+    link.download = `interview-${(event.job_title || 'interview').replace(/\s+/g, '-')}.ics`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    showNotification('Calendar file downloaded!', 'success');
+    if (typeof showNotification === 'function') {
+      showNotification('Calendar file downloaded!', 'success');
+    }
   }
 
   // Click on calendar day to show events
   document.querySelectorAll('.calendar-day.has-event').forEach(day => {
     day.addEventListener('click', function () {
       const date = this.dataset.date;
-      // Scroll to or highlight events for this date
-      showNotification(`Showing events for ${date}`, 'info');
+      showDayEvents(date);
     });
   });
 </script>

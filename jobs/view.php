@@ -4,6 +4,7 @@
  */
 
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../classes/Database.php';
 require_once __DIR__ . '/../classes/Job.php';
 require_once __DIR__ . '/../classes/Application.php';
 require_once __DIR__ . '/../classes/SeekerProfile.php';
@@ -31,12 +32,46 @@ $jobModel->incrementViews($jobId);
 
 // Check if user has already applied
 $hasApplied = false;
+$hasSaved = false;
 $seekerProfile = null;
 if (isLoggedIn() && hasRole(ROLE_SEEKER)) {
   $seekerModel = new SeekerProfile();
   $seekerProfile = $seekerModel->findByUserId(getCurrentUserId());
   if ($seekerProfile) {
     $hasApplied = $appModel->hasApplied($jobId, getCurrentUserId());
+  }
+
+  // Check if job is saved
+  $db = Database::getInstance()->getConnection();
+  $stmt = $db->prepare("SELECT id FROM saved_jobs WHERE user_id = ? AND job_id = ?");
+  $stmt->execute([getCurrentUserId(), $jobId]);
+  $hasSaved = $stmt->fetch() ? true : false;
+}
+
+// Handle save/unsave job
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_job'])) {
+  if (!isLoggedIn()) {
+    $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+    redirect(BASE_URL . '/auth/login.php');
+  }
+
+  if (hasRole(ROLE_SEEKER)) {
+    $db = Database::getInstance()->getConnection();
+
+    if ($hasSaved) {
+      // Unsave
+      $stmt = $db->prepare("DELETE FROM saved_jobs WHERE user_id = ? AND job_id = ?");
+      $stmt->execute([getCurrentUserId(), $jobId]);
+      $hasSaved = false;
+      setFlash('success', 'Job removed from saved list');
+    } else {
+      // Save
+      $stmt = $db->prepare("INSERT INTO saved_jobs (user_id, job_id, saved_at) VALUES (?, ?, NOW())");
+      $stmt->execute([getCurrentUserId(), $jobId]);
+      $hasSaved = true;
+      setFlash('success', 'Job saved successfully!');
+    }
+    redirect($_SERVER['REQUEST_URI']);
   }
 }
 
@@ -116,7 +151,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="company-info">
               <h1 class="job-title"><?php echo sanitize($job['title']); ?></h1>
               <div class="company-meta">
-                <a href="<?php echo BASE_URL; ?>/company/<?php echo $job['company_id']; ?>" class="company-name">
+                <a href="<?php echo BASE_URL; ?>/companies/profile.php?id=<?php echo $job['company_id']; ?>" class="company-name">
                   <?php echo sanitize($job['company_name']); ?>
                 </a>
                 <?php if ($job['industry']): ?>
@@ -265,9 +300,19 @@ include __DIR__ . '/../includes/header.php';
             </button>
           <?php endif; ?>
 
-          <button class="btn btn-secondary btn-block">
+          <?php if (isLoggedIn() && hasRole(ROLE_SEEKER)): ?>
+            <form method="POST" style="margin: 0;">
+              <input type="hidden" name="save_job" value="1">
+              <button type="submit" class="btn <?php echo $hasSaved ? 'btn-primary' : 'btn-secondary'; ?> btn-block">
+                <i class="<?php echo $hasSaved ? 'fas' : 'far'; ?> fa-bookmark"></i>
+                <?php echo $hasSaved ? 'Saved' : 'Save Job'; ?>
+              </button>
+            </form>
+          <?php else: ?>
+            <a href="<?php echo BASE_URL; ?>/auth/login.php" class="btn btn-secondary btn-block">
             <i class="far fa-bookmark"></i> Save Job
-          </button>
+            </a>
+          <?php endif; ?>
 
           <button class="btn btn-ghost btn-block">
             <i class="fas fa-share-alt"></i> Share
@@ -298,7 +343,7 @@ include __DIR__ . '/../includes/header.php';
               <i class="fas fa-external-link-alt"></i> Visit Website
             </a>
           <?php endif; ?>
-          <a href="<?php echo BASE_URL; ?>/company/<?php echo $job['company_id']; ?>"
+          <a href="<?php echo BASE_URL; ?>/companies/profile.php?id=<?php echo $job['company_id']; ?>"
             class="btn btn-ghost btn-block btn-sm">
             View All Jobs
           </a>
@@ -350,7 +395,7 @@ include __DIR__ . '/../includes/header.php';
 
 <!-- Apply Modal -->
 <div class="modal-overlay" id="applyModal">
-  <div class="modal modal-lg">
+  <div class="modal-content modal-lg">
     <div class="modal-header">
       <h3 class="modal-title">Apply for <?php echo sanitize($job['title']); ?></h3>
       <button class="modal-close" data-modal-close>&times;</button>

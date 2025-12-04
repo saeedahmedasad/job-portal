@@ -8,6 +8,7 @@ require_once '../classes/Database.php';
 require_once '../classes/User.php';
 require_once '../classes/Event.php';
 require_once '../classes/Application.php';
+require_once '../classes/Company.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== ROLE_HR) {
   header('Location: ' . BASE_URL . '/auth/login.php?redirect=hr/calendar');
@@ -17,10 +18,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== ROLE_HR) {
 $db = Database::getInstance()->getConnection();
 $userModel = new User();
 $eventModel = new Event();
+$companyModel = new Company();
 
 $hr = $userModel->findById($_SESSION['user_id']);
+$company = $companyModel->findByHRUserId($_SESSION['user_id']);
 
-if (!$hr['is_verified']) {
+// Check if company is verified
+if (!$company || $company['verification_status'] !== 'verified') {
   header('Location: ' . BASE_URL . '/hr/index.php');
   exit;
 }
@@ -56,6 +60,7 @@ $stmt = $db->prepare("
     LEFT JOIN jobs j ON a.job_id = j.id
     WHERE e.hr_user_id = ? 
     AND e.event_date BETWEEN ? AND ?
+    AND e.status = 'scheduled'
     ORDER BY e.event_date ASC, e.event_time ASC
 ");
 $stmt->execute([$_SESSION['user_id'], $startDate, $endDate]);
@@ -141,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   } elseif ($action === 'cancel_event') {
     $eventId = (int) $_POST['event_id'];
 
-    $stmt = $db->prepare("UPDATE events SET status = 'cancelled' WHERE id = ? AND hr_id = ?");
+    $stmt = $db->prepare("UPDATE events SET status = 'cancelled' WHERE id = ? AND hr_user_id = ?");
     if ($stmt->execute([$eventId, $_SESSION['user_id']])) {
       $message = 'Event cancelled.';
       $messageType = 'success';
@@ -149,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   } elseif ($action === 'complete_event') {
     $eventId = (int) $_POST['event_id'];
 
-    $stmt = $db->prepare("UPDATE events SET status = 'completed' WHERE id = ? AND hr_id = ?");
+    $stmt = $db->prepare("UPDATE events SET status = 'completed' WHERE id = ? AND hr_user_id = ?");
     if ($stmt->execute([$eventId, $_SESSION['user_id']])) {
       $message = 'Event marked as completed.';
       $messageType = 'success';
@@ -165,10 +170,7 @@ if (isset($_GET['scheduled'])) {
 $pageTitle = 'Calendar';
 require_once '../includes/header.php';
 
-// Get company info for sidebar
-$stmt = $db->prepare("SELECT * FROM companies WHERE hr_user_id = ?");
-$stmt->execute([$_SESSION['user_id']]);
-$company = $stmt->fetch(PDO::FETCH_ASSOC);
+// Company already fetched at top with $companyModel->findByHRUserId()
 ?>
 
 <div class="dashboard-container">
@@ -280,7 +282,10 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
                 $hasEvents = isset($eventsByDate[$dateStr]);
                 ?>
                 <div
-                  class="calendar-day <?php echo $isToday ? 'today' : ''; ?> <?php echo $hasEvents ? 'has-events' : ''; ?>">
+                  class="calendar-day <?php echo $isToday ? 'today' : ''; ?> <?php echo $hasEvents ? 'has-events clickable' : ''; ?>"
+                  <?php if ($hasEvents): ?>
+                        onclick="showDayEvents('<?php echo $dateStr; ?>')"
+                  <?php endif; ?>>
                   <span class="day-number"><?php echo $currentDay; ?></span>
                   <?php if ($hasEvents): ?>
                     <div class="day-events">
@@ -312,13 +317,19 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
 
           <div class="calendar-legend">
             <span class="legend-item">
-              <span class="legend-dot video"></span> Video Call
+              <span class="legend-dot interview"></span> Interview
             </span>
             <span class="legend-item">
-              <span class="legend-dot phone"></span> Phone
+              <span class="legend-dot screening"></span> Screening
             </span>
             <span class="legend-item">
-              <span class="legend-dot in-person"></span> In Person
+              <span class="legend-dot technical"></span> Technical
+            </span>
+            <span class="legend-item">
+              <span class="legend-dot hr_round"></span> HR Round
+            </span>
+            <span class="legend-item">
+              <span class="legend-dot final"></span> Final
             </span>
           </div>
         </div>
@@ -349,14 +360,20 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
                         <i class="fas fa-clock"></i>
                         <?php echo date('g:i A', strtotime($event['event_time'])); ?>
                       </span>
-                      <span class="type <?php echo $event['event_type']; ?>">
-                        <?php if ($event['event_type'] === 'video'): ?>
-                          <i class="fas fa-video"></i>
-                        <?php elseif ($event['event_type'] === 'phone'): ?>
-                          <i class="fas fa-phone"></i>
-                        <?php else: ?>
-                          <i class="fas fa-building"></i>
-                        <?php endif; ?>
+                      <span class="<?php echo $event['event_type']; ?>">
+                        <?php
+                        $typeIcons = [
+                          'interview' => 'fa-user-tie',
+                          'screening' => 'fa-phone',
+                          'technical' => 'fa-laptop-code',
+                          'hr_round' => 'fa-users',
+                          'final' => 'fa-handshake',
+                          'other' => 'fa-calendar'
+                        ];
+                        $icon = $typeIcons[$event['event_type']] ?? 'fa-calendar';
+                        ?>
+                        <i class="fas <?php echo $icon; ?>"></i>
+                        <?php echo ucfirst(str_replace('_', ' ', $event['event_type'])); ?>
                       </span>
                     </div>
                   </div>
@@ -424,21 +441,32 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
             <select id="candidate" name="seeker_id" class="form-control" required onchange="updateJobId(this)">
               <option value="">Choose a candidate...</option>
               <?php foreach ($candidates as $c): ?>
-                <option value="<?php echo $c['seeker_id']; ?>" data-job="<?php echo $c['job_id']; ?>">
+                                    <option value="<?php echo $c['seeker_id']; ?>" data-job="<?php echo $c['job_id']; ?>"
+                                  data-app="<?php echo $c['app_id']; ?>">
                   <?php echo htmlspecialchars($c['full_name']); ?> - <?php echo htmlspecialchars($c['job_title']); ?>
                 </option>
               <?php endforeach; ?>
             </select>
             <input type="hidden" name="job_id" id="job_id" value="">
+            <input type="hidden" name="application_id" id="application_id" value="">
+          </div>
+
+          <div class="form-group">
+            <label for="event_title">Interview Title <span class="required">*</span></label>
+            <input type="text" id="event_title" name="event_title" class="form-control" required
+              placeholder="e.g., Initial Screening Interview">
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label for="event_type">Interview Type <span class="required">*</span></label>
               <select id="event_type" name="event_type" class="form-control" required>
-                <option value="video">Video Call</option>
-                <option value="phone">Phone Call</option>
-                <option value="in-person">In Person</option>
+                <option value="interview">General Interview</option>
+                <option value="screening">Initial Screening</option>
+                <option value="technical">Technical Interview</option>
+                <option value="hr_round">HR Round</option>
+                <option value="final">Final Interview</option>
+                <option value="other">Other</option>
               </select>
             </div>
             <div class="form-group">
@@ -496,6 +524,27 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
   </div>
 </div>
 
+<!-- Day Events Modal -->
+<div class="modal" id="dayEventsModal">
+  <div class="modal-backdrop" onclick="closeDayEventsModal()"></div>
+  <div class="modal-content modal-lg">
+    <div class="modal-header">
+      <h3><i class="fas fa-calendar-day"></i> <span id="dayEventsTitle">Events</span></h3>
+      <button class="btn-icon" onclick="closeDayEventsModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="dayEventsContent">
+      <!-- Events will be populated via JavaScript -->
+    </div>
+  </div>
+</div>
+
+<!-- Events data for JavaScript -->
+<script>
+const eventsData = <?php echo json_encode($eventsByDate); ?>;
+</script>
+
 <style>
   /* Calendar Page */
   .calendar-page {
@@ -530,16 +579,18 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
   /* Calendar Layout */
   .calendar-layout {
     display: grid;
-    grid-template-columns: 1fr 350px;
+    grid-template-columns: 2fr 1fr;
     gap: 2rem;
   }
 
-  /* Calendar Card */
-  .calendar-card {
-    background: var(--card-bg);
+  /* Calendar Card - Glass effect like seeker */
+  .calendar-card,
+  .glass-card {
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(10px);
     border-radius: 16px;
     padding: 1.5rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .calendar-nav {
@@ -547,16 +598,20 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .calendar-nav h2 {
     font-size: 1.5rem;
+    color: var(--primary-color);
+    margin: 0;
   }
 
   .nav-btn {
     width: 40px;
     height: 40px;
-    background: var(--bg-dark);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -564,43 +619,49 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     color: var(--text-muted);
     text-decoration: none;
     transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .nav-btn:hover {
     background: var(--primary-color);
     color: var(--bg-dark);
+    border-color: var(--primary-color);
   }
 
   /* Calendar Grid */
   .calendar-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
+    gap: 0.5rem;
     margin-bottom: 0.5rem;
   }
 
   .calendar-header span {
     text-align: center;
-    padding: 0.75rem;
-    color: var(--text-muted);
-    font-size: 0.8rem;
+    padding: 0.5rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
     font-weight: 600;
-    text-transform: uppercase;
   }
 
   .calendar-body {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
+    gap: 0.5rem;
   }
 
   .calendar-day {
     aspect-ratio: 1;
-    background: var(--bg-dark);
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0.5rem;
     padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     position: relative;
     transition: all 0.3s ease;
+    cursor: default;
   }
 
   .calendar-day.empty {
@@ -608,10 +669,15 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
   .calendar-day:not(.empty):hover {
-    border: 1px solid var(--primary-color);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .calendar-day.today {
+    background: rgba(0, 230, 118, 0.15);
+    border: 2px solid var(--primary-color);
+  }
+
+  .calendar-day.has-events {
     background: rgba(0, 230, 118, 0.1);
   }
 
@@ -621,32 +687,47 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
   .day-number {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 600;
   }
 
   .day-events {
     display: flex;
-    gap: 4px;
-    margin-top: 4px;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   .event-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
+    background: var(--accent-primary);
   }
 
-  .event-dot.video {
+  .event-dot.interview {
+    background: #00E676;
+  }
+
+  .event-dot.screening {
     background: #2196F3;
   }
 
-  .event-dot.phone {
-    background: #4CAF50;
+  .event-dot.technical {
+    background: #FF9800;
   }
 
-  .event-dot.in-person {
+  .event-dot.hr_round {
     background: #9C27B0;
+  }
+
+  .event-dot.final {
+    background: #F44336;
+  }
+
+  .event-dot.other {
+    background: #607D8B;
   }
 
   .more-events {
@@ -677,19 +758,40 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     border-radius: 50%;
   }
 
-  .legend-dot.video {
+  .legend-dot.interview {
+    background: #00E676;
+  }
+
+  .legend-dot.screening {
     background: #2196F3;
   }
 
-  .legend-dot.phone {
-    background: #4CAF50;
+  .legend-dot.technical {
+    background: #FF9800;
   }
 
-  .legend-dot.in-person {
+  .legend-dot.hr_round {
     background: #9C27B0;
   }
 
-  /* Sidebar */
+  .legend-dot.final {
+    background: #F44336;
+  }
+
+  .legend-dot.other {
+    background: #607D8B;
+  }
+
+  .calendar-day.clickable {
+    cursor: pointer;
+  }
+
+  .calendar-day.clickable:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+  }
+
+  /* Sidebar - matching seeker calendar */
   .calendar-sidebar {
     display: flex;
     flex-direction: column;
@@ -697,10 +799,11 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
   .sidebar-card {
-    background: var(--card-bg);
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(10px);
     border-radius: 16px;
     padding: 1.5rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .sidebar-card h3 {
@@ -709,6 +812,7 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     gap: 0.75rem;
     margin-bottom: 1rem;
     font-size: 1rem;
+    color: var(--text-primary);
   }
 
   .sidebar-card h3 i {
@@ -721,6 +825,13 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     color: var(--text-muted);
   }
 
+  .empty-sidebar i {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 1rem;
+    display: block;
+  }
+
   .upcoming-list {
     display: flex;
     flex-direction: column;
@@ -731,33 +842,40 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     display: flex;
     gap: 1rem;
     padding: 1rem;
-    background: var(--bg-dark);
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+
+  .upcoming-item:hover {
+    border-color: rgba(0, 230, 118, 0.3);
+    transform: translateX(4px);
   }
 
   .event-date-badge {
-    width: 50px;
-    height: 50px;
-    background: rgba(0, 230, 118, 0.1);
-    border-radius: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    min-width: 60px;
+    padding: 0.5rem;
+    background: rgba(0, 230, 118, 0.1);
+    border-radius: 0.5rem;
     flex-shrink: 0;
   }
 
-  .event-date-badge .day {
-    font-size: 1.25rem;
-    font-weight: 700;
+  .event-date-badge .month {
+    font-size: 0.75rem;
+    text-transform: uppercase;
     color: var(--primary-color);
-    line-height: 1;
   }
 
-  .event-date-badge .month {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
+  .event-date-badge .day {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
   }
 
   .event-details {
@@ -766,39 +884,62 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
   .event-details h4 {
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
+    font-size: 1rem;
+    margin: 0 0 0.25rem;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .event-details .job {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin: 0.25rem 0;
   }
 
   .event-meta {
     display: flex;
-    gap: 0.75rem;
+    flex-wrap: wrap;
+    gap: 1rem;
     font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0.5rem 0;
+  }
+
+  .event-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 
   .event-meta .time {
     color: var(--primary-color);
   }
 
-  .event-meta .type.video {
+  .event-meta .interview {
+    color: #00E676;
+  }
+
+  .event-meta .screening {
     color: #2196F3;
   }
 
-  .event-meta .type.phone {
-    color: #4CAF50;
+  .event-meta .technical {
+    color: #FF9800;
   }
 
-  .event-meta .type.in-person {
+  .event-meta .hr_round {
     color: #9C27B0;
+  }
+
+  .event-meta .final {
+    color: #F44336;
+  }
+
+  .event-meta .other {
+    color: #607D8B;
   }
 
   .event-actions {
@@ -864,7 +1005,7 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     color: var(--primary-color);
   }
 
-  /* Modal */
+  /* Modal - matching seeker calendar */
   .modal {
     display: none;
     position: fixed;
@@ -875,6 +1016,8 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     z-index: 1000;
     align-items: center;
     justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
   }
 
   .modal.active {
@@ -887,19 +1030,19 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
   }
 
   .modal-content {
     position: relative;
-    background: var(--card-bg);
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(20px);
     border-radius: 16px;
     width: 100%;
     max-width: 500px;
     max-height: 90vh;
     overflow-y: auto;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
   }
 
   .modal-content.modal-lg {
@@ -911,7 +1054,7 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .modal-header h3 {
@@ -919,10 +1062,30 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     align-items: center;
     gap: 0.75rem;
     font-size: 1.25rem;
+    color: var(--text-primary);
   }
 
   .modal-header h3 i {
     color: var(--primary-color);
+  }
+
+  .modal-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-muted);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+
+  .modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
   }
 
   .modal-body {
@@ -934,7 +1097,7 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     justify-content: flex-end;
     gap: 1rem;
     padding: 1.5rem;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .empty-form-state {
@@ -944,12 +1107,14 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
 
   .empty-form-state i {
     font-size: 3rem;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.2);
     margin-bottom: 1rem;
+    display: block;
   }
 
   .empty-form-state h4 {
     margin-bottom: 0.5rem;
+    color: var(--text-primary);
   }
 
   .empty-form-state p {
@@ -957,7 +1122,141 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     margin-bottom: 1rem;
   }
 
-  /* Form Styles */
+  /* Day Events Modal Content - matching seeker calendar */
+  .day-event-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 4px solid var(--primary-color);
+    transition: all 0.3s ease;
+  }
+
+  .day-event-item:hover {
+    border-color: rgba(0, 230, 118, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .day-event-item.interview {
+    border-left-color: #00E676;
+  }
+
+  .day-event-item.screening {
+    border-left-color: #2196F3;
+  }
+
+  .day-event-item.technical {
+    border-left-color: #FF9800;
+  }
+
+  .day-event-item.hr_round {
+    border-left-color: #9C27B0;
+  }
+
+  .day-event-item.final {
+    border-left-color: #F44336;
+  }
+
+  .day-event-item.other {
+    border-left-color: #607D8B;
+  }
+
+  .day-event-time {
+    flex-shrink: 0;
+    text-align: center;
+    min-width: 70px;
+    padding: 0.5rem;
+    background: rgba(0, 230, 118, 0.1);
+    border-radius: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .day-event-time .time {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+  }
+
+  .day-event-time .duration {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .day-event-info {
+    flex: 1;
+  }
+
+  .day-event-info h4 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+  }
+
+  .day-event-info .seeker {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .day-event-info .type-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  .type-badge.interview {
+    background: rgba(0, 230, 118, 0.15);
+    color: #00E676;
+  }
+
+  .type-badge.screening {
+    background: rgba(33, 150, 243, 0.15);
+    color: #2196F3;
+  }
+
+  .type-badge.technical {
+    background: rgba(255, 152, 0, 0.15);
+    color: #FF9800;
+  }
+
+  .type-badge.hr_round {
+    background: rgba(156, 39, 176, 0.15);
+    color: #9C27B0;
+  }
+
+  .type-badge.final {
+    background: rgba(244, 67, 54, 0.15);
+    color: #F44336;
+  }
+
+  .type-badge.other {
+    background: rgba(96, 125, 139, 0.15);
+    color: #607D8B;
+  }
+
+  .day-event-location {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .day-event-location i {
+    color: var(--primary-color);
+  }
+
+  /* Form Styles - matching seeker calendar */
   .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -972,25 +1271,68 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;
+    color: var(--text-primary);
   }
 
   .required {
-    color: var(--danger);
+    color: #F44336;
   }
 
   .form-control {
     width: 100%;
     padding: 0.75rem 1rem;
-    background: var(--bg-dark);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-light);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
     font-size: 1rem;
+    transition: all 0.3s ease;
   }
 
   .form-control:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.1);
+  }
+
+  .form-control::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    font-size: 0.9rem;
+  }
+
+  .btn-primary {
+    background: var(--primary-color);
+    color: #000;
+  }
+
+  .btn-primary:hover {
+    background: #00ff88;
+    transform: translateY(-2px);
+  }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+  }
+
+  .btn-outline:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
   }
 
   /* Responsive */
@@ -1015,13 +1357,24 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
       gap: 1rem;
     }
 
+    .calendar-header {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
     .calendar-day {
       padding: 0.25rem;
       font-size: 0.8rem;
+      min-height: 60px;
     }
 
     .form-row {
       grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+      margin: 1rem;
+      max-height: calc(100vh - 2rem);
     }
   }
 </style>
@@ -1037,15 +1390,75 @@ $company = $stmt->fetch(PDO::FETCH_ASSOC);
     document.body.style.overflow = '';
   }
 
+  function openDayEventsModal() {
+    document.getElementById('dayEventsModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDayEventsModal() {
+    document.getElementById('dayEventsModal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function showDayEvents(dateStr) {
+    const events = eventsData[dateStr] || [];
+    const date = new Date(dateStr + 'T12:00:00');
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const formattedDate = date.toLocaleDateString('en-US', options);
+    
+    document.getElementById('dayEventsTitle').textContent = formattedDate;
+    
+    let html = '';
+    if (events.length === 0) {
+      html = '<p class="text-center text-muted">No events scheduled for this day.</p>';
+    } else {
+      events.forEach(event => {
+        const eventTime = new Date('2000-01-01T' + event.event_time);
+        const formattedTime = eventTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        const eventType = event.event_type || 'interview';
+        const typeLabel = eventType.replace('_', ' ');
+        
+        html += `
+          <div class="day-event-item ${eventType}">
+            <div class="day-event-time">
+              <div class="time">${formattedTime}</div>
+              <div class="duration">${event.duration_minutes || 60} min</div>
+            </div>
+            <div class="day-event-info">
+              <h4>${escapeHtml(event.event_title || 'Interview')}</h4>
+              <p class="seeker"><i class="fas fa-user"></i> ${escapeHtml(event.seeker_name || 'Candidate')}</p>
+              ${event.job_title ? `<p class="seeker"><i class="fas fa-briefcase"></i> ${escapeHtml(event.job_title)}</p>` : ''}
+              <span class="type-badge ${eventType}">${typeLabel}</span>
+              ${event.location ? `<div class="day-event-location"><i class="fas fa-map-marker-alt"></i>${escapeHtml(event.location)}</div>` : ''}
+              ${event.meeting_link ? `<div class="day-event-location"><i class="fas fa-video"></i><a href="${escapeHtml(event.meeting_link)}" target="_blank" style="color: var(--primary-color);">Join Meeting</a></div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+    
+    document.getElementById('dayEventsContent').innerHTML = html;
+    openDayEventsModal();
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   function updateJobId(select) {
     const option = select.options[select.selectedIndex];
     document.getElementById('job_id').value = option.dataset.job || '';
+    document.getElementById('application_id').value = option.dataset.app || '';
   }
 
   // Close modal on escape
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       closeScheduleModal();
+      closeDayEventsModal();
     }
   });
 </script>

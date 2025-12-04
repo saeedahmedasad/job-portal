@@ -95,6 +95,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="form-group">
           <label class="form-check">
             <input type="checkbox" name="remember" class="form-check-input">
+            <span class="checkmark"></span>
             <span>Remember me for 30 days</span>
           </label>
         </div>
@@ -249,6 +250,73 @@ include __DIR__ . '/../includes/header.php';
 
   .btn-toggle-password:hover {
     color: var(--accent-primary);
+  }
+
+  /* Custom Checkbox */
+  .form-check {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    user-select: none;
+  }
+
+  .form-check input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+
+  .form-check .checkmark {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    width: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+  }
+
+  .form-check:hover .checkmark {
+    border-color: var(--accent-primary);
+    background: rgba(0, 230, 118, 0.1);
+  }
+
+  .form-check input:checked + .checkmark {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+  }
+
+  .form-check .checkmark:after {
+    content: '';
+    position: absolute;
+    display: none;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid var(--bg-primary);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .form-check input:checked + .checkmark:after {
+    display: block;
+  }
+
+  .form-check > span:last-child {
+    display: inline;
   }
 
   .auth-divider {

@@ -92,17 +92,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($action === 'update_social') {
     $linkedin = trim($_POST['linkedin'] ?? '');
     $twitter = trim($_POST['twitter'] ?? '');
-    $facebook = trim($_POST['facebook'] ?? '');
-    $instagram = trim($_POST['instagram'] ?? '');
 
     $stmt = $db->prepare("
             UPDATE companies SET 
-                linkedin = ?, twitter = ?, facebook = ?, instagram = ?,
+                social_linkedin = ?, social_twitter = ?,
                 updated_at = NOW()
             WHERE id = ?
         ");
 
-    if ($stmt->execute([$linkedin, $twitter, $facebook, $instagram, $company['id']])) {
+    if ($stmt->execute([$linkedin, $twitter, $company['id']])) {
       $message = 'Social links updated successfully!';
       $messageType = 'success';
 
@@ -270,16 +268,16 @@ include '../includes/header.php';
     <?php endif; ?>
 
     <!-- Verification Status -->
-    <div class="verification-status <?php echo $company['is_verified'] ? 'verified' : 'pending'; ?>">
+    <div class="verification-status <?php echo ($company['verification_status'] ?? 'pending') === 'verified' ? 'verified' : 'pending'; ?>">
       <div class="status-icon">
-        <i class="fas fa-<?php echo $company['is_verified'] ? 'check-circle' : 'clock'; ?>"></i>
+        <i class="fas fa-<?php echo ($company['verification_status'] ?? 'pending') === 'verified' ? 'check-circle' : 'clock'; ?>"></i>
       </div>
       <div class="status-info">
         <h3>
-          <?php echo $company['is_verified'] ? 'Verified Company' : 'Verification Pending'; ?>
+          <?php echo ($company['verification_status'] ?? 'pending') === 'verified' ? 'Verified Company' : 'Verification Pending'; ?>
         </h3>
         <p>
-          <?php echo $company['is_verified']
+          <?php echo ($company['verification_status'] ?? 'pending') === 'verified'
             ? 'Your company profile is verified and visible to job seekers.'
             : 'Your company profile is under review. You can still post jobs while waiting.'; ?>
         </p>
@@ -412,7 +410,7 @@ include '../includes/header.php';
               <i class="fab fa-linkedin"></i> LinkedIn
             </label>
             <input type="url" id="linkedin" name="linkedin" placeholder="https://www.linkedin.com/company/..."
-              value="<?php echo htmlspecialchars($company['linkedin'] ?? ''); ?>">
+              value="<?php echo htmlspecialchars($company['social_linkedin'] ?? ''); ?>">
           </div>
 
           <div class="form-group social-input">
@@ -420,23 +418,7 @@ include '../includes/header.php';
               <i class="fab fa-twitter"></i> Twitter
             </label>
             <input type="url" id="twitter" name="twitter" placeholder="https://twitter.com/..."
-              value="<?php echo htmlspecialchars($company['twitter'] ?? ''); ?>">
-          </div>
-
-          <div class="form-group social-input">
-            <label for="facebook">
-              <i class="fab fa-facebook"></i> Facebook
-            </label>
-            <input type="url" id="facebook" name="facebook" placeholder="https://www.facebook.com/..."
-              value="<?php echo htmlspecialchars($company['facebook'] ?? ''); ?>">
-          </div>
-
-          <div class="form-group social-input">
-            <label for="instagram">
-              <i class="fab fa-instagram"></i> Instagram
-            </label>
-            <input type="url" id="instagram" name="instagram" placeholder="https://www.instagram.com/..."
-              value="<?php echo htmlspecialchars($company['instagram'] ?? ''); ?>">
+              value="<?php echo htmlspecialchars($company['social_twitter'] ?? ''); ?>">
           </div>
 
           <button type="submit" class="btn btn-primary">
