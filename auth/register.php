@@ -191,12 +191,21 @@ include __DIR__ . '/../includes/header.php';
                     
                     <div class="form-group">
                         <label for="company_logo" class="form-label">Company Logo</label>
-                        <div class="file-upload">
+                        <div class="file-upload" id="logoUploadArea">
                             <input type="file" id="company_logo" name="company_logo" class="file-upload-input" accept="image/*">
-                            <label for="company_logo" class="file-upload-label">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <span>Upload Logo</span>
-                                <small>PNG, JPG up to 2MB</small>
+                            <label for="company_logo" class="file-upload-label" id="logoUploadLabel">
+                                <div class="upload-placeholder" id="logoPlaceholder">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Upload Logo</span>
+                                    <small>PNG, JPG up to 2MB</small>
+                                </div>
+                                <div class="upload-preview" id="logoPreview" style="display: none;">
+                                    <img id="logoPreviewImg" src="" alt="Logo Preview">
+                                    <span class="preview-filename" id="logoFilename"></span>
+                                    <button type="button" class="btn-remove-logo" id="removeLogo" onclick="removeLogo(event)">
+                                        <i class="fas fa-times"></i> Remove
+                                    </button>
+                                </div>
                             </label>
                         </div>
                     </div>
@@ -271,21 +280,6 @@ include __DIR__ . '/../includes/header.php';
                     <i class="fas fa-arrow-right"></i>
                 </button>
             </form>
-            
-            <div class="auth-divider">
-                <span>or continue with</span>
-            </div>
-            
-            <div class="auth-social">
-                <button type="button" class="btn-social google">
-                    <i class="fab fa-google"></i>
-                    <span>Google</span>
-                </button>
-                <button type="button" class="btn-social linkedin">
-                    <i class="fab fa-linkedin-in"></i>
-                    <span>LinkedIn</span>
-                </button>
-            </div>
             
             <div class="auth-footer">
                 <p>Already have an account? <a href="<?php echo BASE_URL; ?>/auth/login.php">Sign in</a></p>
@@ -602,6 +596,62 @@ include __DIR__ . '/../includes/header.php';
     color: var(--text-muted);
     font-size: 0.8rem;
     margin-top: var(--spacing-xs);
+}
+
+/* Logo Preview Styles */
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.upload-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.upload-preview img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+    background: white;
+    padding: 0.25rem;
+}
+
+.preview-filename {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-remove-logo {
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #f44336;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-remove-logo:hover {
+    background: rgba(244, 67, 54, 0.2);
+}
+
+.file-upload-label.has-preview {
+    border-color: var(--accent-primary);
+    background: rgba(0, 230, 118, 0.05);
 }
 
 /* Submit Button */
@@ -998,7 +1048,59 @@ function toggleRole(role) {
 document.addEventListener('DOMContentLoaded', function() {
     const initialRole = document.getElementById('roleInput').value;
     toggleRole(initialRole);
+    
+    // Logo preview handling
+    const logoInput = document.getElementById('company_logo');
+    if (logoInput) {
+        logoInput.addEventListener('change', handleLogoSelect);
+    }
 });
+
+// Handle logo file selection
+function handleLogoSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file.');
+            e.target.value = '';
+            return;
+        }
+        
+        // Validate file size (2MB max)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('File size must be less than 2MB.');
+            e.target.value = '';
+            return;
+        }
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            document.getElementById('logoPreviewImg').src = event.target.result;
+            document.getElementById('logoFilename').textContent = file.name;
+            document.getElementById('logoPlaceholder').style.display = 'none';
+            document.getElementById('logoPreview').style.display = 'flex';
+            document.getElementById('logoUploadLabel').classList.add('has-preview');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Remove logo
+function removeLogo(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const logoInput = document.getElementById('company_logo');
+    logoInput.value = '';
+    
+    document.getElementById('logoPreviewImg').src = '';
+    document.getElementById('logoFilename').textContent = '';
+    document.getElementById('logoPlaceholder').style.display = 'flex';
+    document.getElementById('logoPreview').style.display = 'none';
+    document.getElementById('logoUploadLabel').classList.remove('has-preview');
+}
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

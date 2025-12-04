@@ -252,23 +252,50 @@ function formatDate(string $date, string $format = 'M d, Y'): string
 /**
  * Time Ago
  */
-function timeAgo(string $datetime): string
+function timeAgo(?string $datetime): string
 {
+  if (empty($datetime)) {
+    return 'Recently';
+  }
+
   $time = strtotime($datetime);
-  $diff = time() - $time;
+  if ($time === false) {
+    return 'Recently';
+  }
+
+  $now = time();
+  $diff = $now - $time;
+
+  // Handle future dates
+  if ($diff < 0) {
+    return 'Just now';
+  }
 
   if ($diff < 60)
     return 'Just now';
-  if ($diff < 3600)
-    return floor($diff / 60) . ' min ago';
-  if ($diff < 86400)
-    return floor($diff / 3600) . ' hours ago';
-  if ($diff < 604800)
-    return floor($diff / 86400) . ' days ago';
-  if ($diff < 2592000)
-    return floor($diff / 604800) . ' weeks ago';
+  if ($diff < 3600) {
+    $mins = floor($diff / 60);
+    return $mins . ($mins == 1 ? ' minute ago' : ' minutes ago');
+  }
+  if ($diff < 86400) {
+    $hours = floor($diff / 3600);
+    return $hours . ($hours == 1 ? ' hour ago' : ' hours ago');
+  }
+  if ($diff < 604800) {
+    $days = floor($diff / 86400);
+    return $days . ($days == 1 ? ' day ago' : ' days ago');
+  }
+  if ($diff < 2592000) {
+    $weeks = floor($diff / 604800);
+    return $weeks . ($weeks == 1 ? ' week ago' : ' weeks ago');
+  }
+  if ($diff < 31536000) {
+    $months = floor($diff / 2592000);
+    return $months . ($months == 1 ? ' month ago' : ' months ago');
+  }
 
-  return formatDate($datetime);
+  $years = floor($diff / 31536000);
+  return $years . ($years == 1 ? ' year ago' : ' years ago');
 }
 
 /**

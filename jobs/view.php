@@ -8,6 +8,7 @@ require_once __DIR__ . '/../classes/Database.php';
 require_once __DIR__ . '/../classes/Job.php';
 require_once __DIR__ . '/../classes/Application.php';
 require_once __DIR__ . '/../classes/SeekerProfile.php';
+require_once __DIR__ . '/../includes/notification-helper.php';
 
 $jobModel = new Job();
 $appModel = new Application();
@@ -116,6 +117,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply'])) {
   ]);
 
   if ($applicationId) {
+    // Get seeker name for notification
+    $profileModel = new SeekerProfile();
+    $seekerProfile = $profileModel->findByUserId(getCurrentUserId());
+    $seekerName = $seekerProfile ? $seekerProfile['first_name'] . ' ' . $seekerProfile['last_name'] : 'A candidate';
+
+    // Notify HR about new application
+    notifyNewApplication(
+      $job['posted_by'],
+      $seekerName,
+      $job['title'],
+      $applicationId
+    );
+
     setFlash('success', 'Application submitted successfully!');
     redirect(BASE_URL . '/seeker/applications.php');
   } else {
@@ -151,7 +165,8 @@ include __DIR__ . '/../includes/header.php';
             <div class="company-info">
               <h1 class="job-title"><?php echo sanitize($job['title']); ?></h1>
               <div class="company-meta">
-                <a href="<?php echo BASE_URL; ?>/companies/profile.php?id=<?php echo $job['company_id']; ?>" class="company-name">
+                <a href="<?php echo BASE_URL; ?>/companies/profile.php?id=<?php echo $job['company_id']; ?>"
+                  class="company-name">
                   <?php echo sanitize($job['company_name']); ?>
                 </a>
                 <?php if ($job['industry']): ?>
@@ -255,7 +270,7 @@ include __DIR__ . '/../includes/header.php';
                 foreach ($skills as $skill):
                   ?>
                   <span class="tag tag-primary"><?php echo sanitize($skill); ?></span>
-                <?php
+                  <?php
                 endforeach;
               endif;
               ?>
@@ -310,7 +325,7 @@ include __DIR__ . '/../includes/header.php';
             </form>
           <?php else: ?>
             <a href="<?php echo BASE_URL; ?>/auth/login.php" class="btn btn-secondary btn-block">
-            <i class="far fa-bookmark"></i> Save Job
+              <i class="far fa-bookmark"></i> Save Job
             </a>
           <?php endif; ?>
 

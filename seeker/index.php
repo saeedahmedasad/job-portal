@@ -32,21 +32,10 @@ $eventModel = new Event();
 $user = $userModel->findById($_SESSION['user_id']);
 $profile = $profileModel->findByUserId($_SESSION['user_id']);
 
-// Calculate profile completion
-$profileCompletion = 20; // Base for having account
+// Recalculate and get profile completion from database
+$profileCompletion = 0;
 if ($profile) {
-  if (!empty($profile['headline']))
-    $profileCompletion += 10;
-  if (!empty($profile['summary']))
-    $profileCompletion += 15;
-  if (!empty($profile['skills']))
-    $profileCompletion += 15;
-  if (!empty($profile['experience']))
-    $profileCompletion += 15;
-  if (!empty($profile['education']))
-    $profileCompletion += 15;
-  if (!empty($profile['resume_path']))
-    $profileCompletion += 10;
+  $profileCompletion = $profileModel->calculateCompletion($profile['id']);
 }
 
 // Dashboard Statistics
@@ -75,8 +64,8 @@ $stmt = $db->prepare("SELECT COUNT(*) as total FROM saved_jobs WHERE user_id = ?
 $stmt->execute([$_SESSION['user_id']]);
 $savedJobs = $stmt->fetch()['total'];
 
-// Profile Views (simulated - would need tracking in production)
-$profileViews = rand(5, 50);
+// Profile Views - get from seeker_profiles table
+$profileViews = $profile['views_count'] ?? 0;
 
 // Upcoming Interviews
 $stmt = $db->prepare("

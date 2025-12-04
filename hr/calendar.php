@@ -9,6 +9,7 @@ require_once '../classes/User.php';
 require_once '../classes/Event.php';
 require_once '../classes/Application.php';
 require_once '../classes/Company.php';
+require_once '../includes/notification-helper.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== ROLE_HR) {
   header('Location: ' . BASE_URL . '/auth/login.php?redirect=hr/calendar');
@@ -133,6 +134,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $stmt = $db->prepare("UPDATE applications SET status = 'interview' WHERE seeker_id = ? AND job_id = ?");
       $stmt->execute([$eventData['seeker_user_id'], (int) $_POST['job_id']]);
 
+      // Get job title for notification
+      $jobTitle = '';
+      foreach ($candidates as $c) {
+        if ($c['job_id'] == (int) $_POST['job_id']) {
+          $jobTitle = $c['job_title'];
+          break;
+        }
+      }
+
+      // Notify seeker about scheduled interview
+      notifyInterviewScheduled(
+        $eventData['seeker_user_id'],
+        $jobTitle ?: 'a position',
+        $eventData['event_date'],
+        $eventData['event_time'],
+        $eventId
+      );
+
       $message = 'Interview scheduled successfully!';
       $messageType = 'success';
 
@@ -146,8 +165,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   } elseif ($action === 'cancel_event') {
     $eventId = (int) $_POST['event_id'];
 
+    // Get event details before cancelling
+    $stmt = $db->prepare("
+      SELECT e.seeker_user_id, e.event_date, j.title as job_title 
+      FROM events e 
+      LEFT JOIN applications a ON e.application_id = a.id
+      LEFT JOIN jobs j ON a.job_id = j.id
+      WHERE e.id = ? AND e.hr_user_id = ?
+    ");
+    $stmt->execute([$eventId, $_SESSION['user_id']]);
+    $eventInfo = $stmt->fetch();
+
     $stmt = $db->prepare("UPDATE events SET status = 'cancelled' WHERE id = ? AND hr_user_id = ?");
     if ($stmt->execute([$eventId, $_SESSION['user_id']])) {
+      // Notify seeker about cancellation
+      if ($eventInfo) {
+        notifyInterviewCancelled(
+          $eventInfo['seeker_user_id'],
+          $eventInfo['job_title'] ?: 'a position',
+          $eventInfo['event_date']
+        );
+      }
       header('Location: ' . BASE_URL . '/hr/calendar.php?month=' . $month . '&year=' . $year . '&cancelled=1');
       exit;
     }

@@ -42,6 +42,10 @@ if (!$profile) {
   exit;
 }
 
+// Increment profile views count
+$stmt = $db->prepare("UPDATE seeker_profiles SET profile_views = profile_views + 1 WHERE user_id = ?");
+$stmt->execute([$seekerId]);
+
 // Get HR's company
 $stmt = $db->prepare("SELECT * FROM companies WHERE hr_user_id = ?");
 $stmt->execute([$_SESSION['user_id']]);
