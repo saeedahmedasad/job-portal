@@ -462,6 +462,12 @@ include __DIR__ . '/includes/header.php';
       width: 100%;
     }
   }
+
+  .search-select option {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+
 </style>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
