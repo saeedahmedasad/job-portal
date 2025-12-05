@@ -180,8 +180,11 @@ $flash = getFlash();
           <div class="nav-dropdown">
             <button class="nav-dropdown-toggle">
               <div class="avatar avatar-sm">
-                <?php if (isset($currentUserProfilePhoto) && $currentUserProfilePhoto): ?>
-                  <img src="<?php echo BASE_URL; ?>/uploads/profiles/<?php echo $currentUserProfilePhoto; ?>"
+                <?php
+                $avatarPath = __DIR__ . '/../uploads/avatars/' . ($currentUserProfilePhoto ?? '');
+                if (isset($currentUserProfilePhoto) && $currentUserProfilePhoto && file_exists($avatarPath)):
+                  ?>
+                  <img src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo $currentUserProfilePhoto; ?>"
                     alt="<?php echo sanitize($currentUserName); ?>"
                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                 <?php else: ?>

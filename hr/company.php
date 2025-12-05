@@ -209,7 +209,7 @@ include '../includes/header.php';
       </div>
       <h3><?php echo htmlspecialchars($company['company_name'] ?? 'HR Manager'); ?></h3>
       <span class="role-badge hr">HR Manager</span>
-      </div>
+    </div>
 
     <nav class="sidebar-nav">
       <a href="<?php echo BASE_URL; ?>/hr/index.php" class="nav-item">
@@ -236,14 +236,18 @@ include '../includes/header.php';
         <i class="fas fa-building"></i>
         <span>Company Profile</span>
       </a>
+      <a href="<?php echo BASE_URL; ?>/hr/settings.php" class="nav-item">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </a>
     </nav>
 
     <div class="sidebar-footer">
       <a href="<?php echo BASE_URL; ?>/auth/logout.php" class="logout-btn">
-    <i class="fas fa-sign-out-alt"></i>
-    <span>Logout</span>
-  </a>
-</div>
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </a>
+    </div>
   </aside>
 
   <!-- Main Content -->
@@ -268,9 +272,11 @@ include '../includes/header.php';
     <?php endif; ?>
 
     <!-- Verification Status -->
-    <div class="verification-status <?php echo ($company['verification_status'] ?? 'pending') === 'verified' ? 'verified' : 'pending'; ?>">
+    <div
+      class="verification-status <?php echo ($company['verification_status'] ?? 'pending') === 'verified' ? 'verified' : 'pending'; ?>">
       <div class="status-icon">
-        <i class="fas fa-<?php echo ($company['verification_status'] ?? 'pending') === 'verified' ? 'check-circle' : 'clock'; ?>"></i>
+        <i
+          class="fas fa-<?php echo ($company['verification_status'] ?? 'pending') === 'verified' ? 'check-circle' : 'clock'; ?>"></i>
       </div>
       <div class="status-info">
         <h3>

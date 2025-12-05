@@ -1,0 +1,11 @@
+# Uploads - user uploaded files
+uploads/avatars/*
+uploads/resumes/*
+uploads/logos/*
+uploads/profiles/*
+
+# Keep the directories but ignore contents
+!uploads/avatars/.gitkeep
+!uploads/resumes/.gitkeep
+!uploads/logos/.gitkeep
+!uploads/profiles/.gitkeep

@@ -345,6 +345,10 @@ require_once '../includes/header.php';
         <i class="fas fa-building"></i>
         <span>Company Profile</span>
       </a>
+      <a href="<?php echo BASE_URL; ?>/hr/settings.php" class="nav-item">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </a>
     </nav>
 
     <div class="sidebar-footer">
@@ -531,9 +535,11 @@ require_once '../includes/header.php';
                     <div class="applicant-details">
                       <h4><?php echo htmlspecialchars($app['applicant_name']); ?></h4>
                       <p class="applicant-headline">
-                        <?php echo htmlspecialchars($app['applicant_headline'] ?? $app['applicant_email']); ?></p>
+                        <?php echo htmlspecialchars($app['applicant_headline'] ?? $app['applicant_email']); ?>
+                      </p>
                       <p class="job-applied">Applied for:
-                        <strong><?php echo htmlspecialchars($app['job_title']); ?></strong></p>
+                        <strong><?php echo htmlspecialchars($app['job_title']); ?></strong>
+                      </p>
                     </div>
                   </div>
                   <div class="application-meta">
@@ -705,7 +711,7 @@ require_once '../includes/header.php';
 <style>
   /* HR Dashboard - Page Specific Overrides Only */
   /* Most styles are now in /assets/css/dashboard.css */
-  
+
   /* Responsive overrides for this page */
   @media (max-width: 1200px) {
     .dashboard-panels {

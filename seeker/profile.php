@@ -248,9 +248,28 @@ require_once '../includes/header.php';
     <div class="resume-wrapper">
       <!-- Resume Header -->
       <header class="resume-header">
-        <div class="resume-avatar">
-          <span><?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?></span>
+        <div class="resume-avatar" onclick="document.getElementById('photoInput').click();"
+          style="cursor: pointer; position: relative; overflow: hidden;">
+          <?php
+          $profilePhotoPath = __DIR__ . '/../uploads/avatars/' . ($profile['profile_photo'] ?? '');
+          if (!empty($profile['profile_photo']) && file_exists($profilePhotoPath)):
+            ?>
+            <img src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo $profile['profile_photo']; ?>"
+              alt="Profile Photo">
+          <?php else: ?>
+            <span><?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?></span>
+          <?php endif; ?>
+
+          <div class="avatar-overlay"
+            style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; padding: 5px; text-align: center; opacity: 0; transition: opacity 0.3s; width: 100%;">
+            <i class="fas fa-camera"></i>
+          </div>
         </div>
+        <style>
+          .resume-avatar:hover .avatar-overlay {
+            opacity: 1;
+          }
+        </style>
         <div class="resume-identity">
           <h1><?php echo htmlspecialchars(($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? '')); ?></h1>
           <h2 class="headline"><?php echo htmlspecialchars($profile['headline'] ?? 'Add your professional headline'); ?>
@@ -286,15 +305,6 @@ require_once '../includes/header.php';
           <button class="btn btn-outline-primary btn-sm" onclick="openModal('basicInfoModal')">
             <i class="fas fa-edit"></i> Edit
           </button>
-          <button class="btn btn-outline-primary btn-sm" onclick="document.getElementById('photoInput').click();">
-            <i class="fas fa-camera"></i> Change Photo
-          </button>
-          <?php if (!empty($profile['profile_photo'])): ?>
-            <form method="POST" style="display:inline-block;" onsubmit="return confirm('Remove profile photo?');">
-              <input type="hidden" name="action" value="remove_photo">
-              <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i> Remove</button>
-            </form>
-          <?php endif; ?>
           <?php if ($profile['resume_file_path']): ?>
             <a href="<?php echo BASE_URL; ?>/uploads/resumes/<?php echo $profile['resume_file_path']; ?>"
               class="btn btn-primary btn-sm" target="_blank">
