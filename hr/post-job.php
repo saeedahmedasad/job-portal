@@ -38,102 +38,112 @@ if ($company['verification_status'] !== 'verified') {
   $pageTitle = 'Account Pending Verification';
   require_once '../includes/header.php';
   ?>
-    <div class="verification-pending-container">
-      <div class="pending-card">
-        <div class="pending-icon">
-          <i class="fas fa-clock"></i>
-        </div>
-        <h1>Account Pending Verification</h1>
-        <p>Your company profile is currently under review by our administrators. You will be able to post jobs once your company has been verified.</p>
-        <div class="pending-info">
-          <div class="info-item">
-            <i class="fas fa-building"></i>
-            <span>Company: <?php echo htmlspecialchars($company['company_name']); ?></span>
-          </div>
-          <div class="info-item">
-            <i class="fas fa-info-circle"></i>
-            <span>Status: <?php echo ucfirst($company['verification_status']); ?></span>
-          </div>
-        </div>
-        <a href="<?php echo BASE_URL; ?>/hr/index.php" class="btn btn-primary">
-          <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
+  <div class="verification-pending-container">
+    <div class="pending-card">
+      <div class="pending-icon">
+        <i class="fas fa-clock"></i>
       </div>
+      <h1>Account Pending Verification</h1>
+      <p>Your company profile is currently under review by our administrators. You will be able to post jobs once your
+        company has been verified.</p>
+      <div class="pending-info">
+        <div class="info-item">
+          <i class="fas fa-building"></i>
+          <span>Company: <?php echo htmlspecialchars($company['company_name']); ?></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-info-circle"></i>
+          <span>Status: <?php echo ucfirst($company['verification_status']); ?></span>
+        </div>
+      </div>
+      <a href="<?php echo BASE_URL; ?>/hr/index.php" class="btn btn-primary">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </a>
     </div>
-    <style>
-      .verification-pending-container {
-        min-height: calc(100vh - 70px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-        margin-top: 70px;
-      }
-      .pending-card {
-        background: var(--card-bg);
-        border-radius: 16px;
-        padding: 3rem;
-        text-align: center;
-        max-width: 500px;
-        border: 1px solid var(--border-color);
-      }
-      .pending-icon {
-        width: 100px;
-        height: 100px;
-        background: rgba(255, 193, 7, 0.1);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 1.5rem;
-        font-size: 3rem;
-        color: #FFC107;
-      }
-      .pending-card h1 {
-        margin-bottom: 1rem;
-        font-size: 1.75rem;
-      }
-      .pending-card p {
-        color: var(--text-muted);
-        margin-bottom: 1.5rem;
-      }
-      .pending-info {
-        background: var(--bg-dark);
-        border-radius: 12px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-      }
-      .info-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.5rem;
-        color: var(--text-muted);
-      }
-      .info-item i {
-        color: var(--primary-color);
-        width: 20px;
-      }
-      .btn-primary {
-        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-        color: var(--bg-dark);
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-      }
-      .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(0, 230, 118, 0.3);
-      }
-    </style>
-    <?php
-    require_once '../includes/footer.php';
-    exit;
+  </div>
+  <style>
+    .verification-pending-container {
+      min-height: calc(100vh - 70px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      margin-top: 70px;
+    }
+
+    .pending-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 3rem;
+      text-align: center;
+      max-width: 500px;
+      border: 1px solid var(--border-color);
+    }
+
+    .pending-icon {
+      width: 100px;
+      height: 100px;
+      background: rgba(255, 193, 7, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      font-size: 3rem;
+      color: #FFC107;
+    }
+
+    .pending-card h1 {
+      margin-bottom: 1rem;
+      font-size: 1.75rem;
+    }
+
+    .pending-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .pending-info {
+      background: var(--bg-dark);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .info-item i {
+      color: var(--primary-color);
+      width: 20px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: var(--bg-dark);
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 230, 118, 0.3);
+    }
+  </style>
+  <?php
+  require_once '../includes/footer.php';
+  exit;
 }
 
 $message = '';
@@ -223,7 +233,16 @@ require_once '../includes/header.php';
   <aside class="dashboard-sidebar">
     <div class="sidebar-header">
       <div class="hr-avatar">
-        <?php echo strtoupper(substr($company['company_name'] ?? 'HR', 0, 2)); ?>
+        <?php
+        $logoPath = '../uploads/logos/' . ($company['logo'] ?? '');
+        if (!empty($company['logo']) && file_exists($logoPath)):
+          ?>
+          <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo $company['logo']; ?>"
+            alt="<?php echo htmlspecialchars($company['company_name']); ?>"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        <?php else: ?>
+          <?php echo strtoupper(substr($company['company_name'] ?? 'HR', 0, 2)); ?>
+        <?php endif; ?>
       </div>
       <h3><?php echo htmlspecialchars($company['company_name'] ?? $hr['email']); ?></h3>
       <span class="role-badge hr">HR Manager</span>

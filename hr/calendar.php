@@ -226,7 +226,16 @@ require_once '../includes/header.php';
   <aside class="dashboard-sidebar">
     <div class="sidebar-header">
       <div class="hr-avatar">
-        <?php echo strtoupper(substr($company['company_name'] ?? 'HR', 0, 2)); ?>
+        <?php
+        $logoPath = '../uploads/logos/' . ($company['logo'] ?? '');
+        if (!empty($company['logo']) && file_exists($logoPath)):
+          ?>
+          <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo $company['logo']; ?>"
+            alt="<?php echo htmlspecialchars($company['company_name']); ?>"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        <?php else: ?>
+          <?php echo strtoupper(substr($company['company_name'] ?? 'HR', 0, 2)); ?>
+        <?php endif; ?>
       </div>
       <h3><?php echo htmlspecialchars($company['company_name'] ?? $hr['email']); ?></h3>
       <span class="role-badge hr">HR Manager</span>
@@ -331,9 +340,7 @@ require_once '../includes/header.php';
                 ?>
                 <div
                   class="calendar-day <?php echo $isToday ? 'today' : ''; ?> <?php echo $hasEvents ? 'has-events clickable' : ''; ?>"
-                  <?php if ($hasEvents): ?>
-                        onclick="showDayEvents('<?php echo $dateStr; ?>')"
-                  <?php endif; ?>>
+                  <?php if ($hasEvents): ?> onclick="showDayEvents('<?php echo $dateStr; ?>')" <?php endif; ?>>
                   <span class="day-number"><?php echo $currentDay; ?></span>
                   <?php if ($hasEvents): ?>
                     <div class="day-events">
@@ -489,8 +496,8 @@ require_once '../includes/header.php';
             <select id="candidate" name="seeker_id" class="form-control" required onchange="updateJobId(this)">
               <option value="">Choose a candidate...</option>
               <?php foreach ($candidates as $c): ?>
-                                    <option value="<?php echo $c['seeker_id']; ?>" data-job="<?php echo $c['job_id']; ?>"
-                                  data-app="<?php echo $c['app_id']; ?>">
+                <option value="<?php echo $c['seeker_id']; ?>" data-job="<?php echo $c['job_id']; ?>"
+                  data-app="<?php echo $c['app_id']; ?>">
                   <?php echo htmlspecialchars($c['full_name']); ?> - <?php echo htmlspecialchars($c['job_title']); ?>
                 </option>
               <?php endforeach; ?>
@@ -590,7 +597,7 @@ require_once '../includes/header.php';
 
 <!-- Events data for JavaScript -->
 <script>
-const eventsData = <?php echo json_encode($eventsByDate); ?>;
+  const eventsData = <?php echo json_encode($eventsByDate); ?>;
 </script>
 
 <style>
@@ -1466,9 +1473,9 @@ const eventsData = <?php echo json_encode($eventsByDate); ?>;
     const date = new Date(dateStr + 'T12:00:00');
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const formattedDate = date.toLocaleDateString('en-US', options);
-    
+
     document.getElementById('dayEventsTitle').textContent = formattedDate;
-    
+
     let html = '';
     if (events.length === 0) {
       html = '<p class="text-center text-muted">No events scheduled for this day.</p>';
@@ -1478,7 +1485,7 @@ const eventsData = <?php echo json_encode($eventsByDate); ?>;
         const formattedTime = eventTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
         const eventType = event.event_type || 'interview';
         const typeLabel = eventType.replace('_', ' ');
-        
+
         html += `
           <div class="day-event-item ${eventType}">
             <div class="day-event-time">
@@ -1497,7 +1504,7 @@ const eventsData = <?php echo json_encode($eventsByDate); ?>;
         `;
       });
     }
-    
+
     document.getElementById('dayEventsContent').innerHTML = html;
     openDayEventsModal();
   }

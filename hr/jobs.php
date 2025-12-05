@@ -149,7 +149,16 @@ require_once '../includes/header.php';
   <aside class="dashboard-sidebar">
     <div class="sidebar-header">
       <div class="hr-avatar">
-        <?php echo strtoupper(substr($company['company_name'] ?? 'HR', 0, 2)); ?>
+        <?php
+        $logoPath = '../uploads/logos/' . ($company['logo'] ?? '');
+        if (!empty($company['logo']) && file_exists($logoPath)):
+          ?>
+          <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo $company['logo']; ?>"
+            alt="<?php echo htmlspecialchars($company['company_name']); ?>"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        <?php else: ?>
+          <?php echo strtoupper(substr($company['company_name'] ?? 'HR', 0, 2)); ?>
+        <?php endif; ?>
       </div>
       <h3><?php echo htmlspecialchars($company['company_name'] ?? $hr['email']); ?></h3>
       <span class="role-badge hr">HR Manager</span>
@@ -398,7 +407,8 @@ require_once '../includes/header.php';
                   </td>
                   <td>
                     <div class="action-buttons">
-                      <a href="<?php echo BASE_URL; ?>/jobs/view.php?id=<?php echo $job['id']; ?>" class="btn-icon" title="View">
+                      <a href="<?php echo BASE_URL; ?>/jobs/view.php?id=<?php echo $job['id']; ?>" class="btn-icon"
+                        title="View">
                         <i class="fas fa-eye"></i>
                       </a>
                       <a href="<?php echo BASE_URL; ?>/hr/edit-job.php?id=<?php echo $job['id']; ?>" class="btn-icon"
