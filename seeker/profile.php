@@ -146,6 +146,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
       }
     }
+  } elseif ($action === 'upload_photo') {
+    if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
+      $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      $maxSize = 2 * 1024 * 1024; // 2MB
+
+      if (!in_array($_FILES['profile_photo']['type'], $allowedTypes)) {
+        $message = 'Invalid file type. Please upload JPG, PNG, GIF or WebP.';
+        $messageType = 'error';
+      } elseif ($_FILES['profile_photo']['size'] > $maxSize) {
+        $message = 'File too large. Maximum size is 2MB.';
+        $messageType = 'error';
+      } else {
+        $extension = pathinfo($_FILES['profile_photo']['name'], PATHINFO_EXTENSION);
+        $filename = 'profile_' . $_SESSION['user_id'] . '_' . time() . '.' . $extension;
+        $uploadPath = '../uploads/profiles/' . $filename;
+
+        // Create directory if not exists
+        if (!file_exists('../uploads/profiles/')) {
+          mkdir('../uploads/profiles/', 0777, true);
+        }
+
+        // Delete old photo if exists
+        if ($profile['profile_photo'] && file_exists('../uploads/profiles/' . $profile['profile_photo'])) {
+          unlink('../uploads/profiles/' . $profile['profile_photo']);
+        }
+
+        if (move_uploaded_file($_FILES['profile_photo']['tmp_name'], $uploadPath)) {
+          $profileModel->update($profile['id'], ['profile_photo' => $filename]);
+          $message = 'Profile photo updated successfully!';
+          $messageType = 'success';
+          $profile = $profileModel->findByUserId($_SESSION['user_id']);
+        } else {
+          $message = 'Failed to upload profile photo.';
+          $messageType = 'error';
+        }
+      }
+    }
   }
 }
 
@@ -171,9 +208,32 @@ require_once '../includes/header.php';
     <div class="resume-wrapper">
       <!-- Resume Header -->
       <header class="resume-header">
-        <div class="resume-avatar">
-          <span><?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?></span>
+        <div class="resume-avatar" onclick="document.getElementById('profilePhotoInput').click()"
+          style="cursor: pointer; position: relative;">
+          <?php if (!empty($profile['profile_photo'])): ?>
+            <img src="<?php echo BASE_URL; ?>/uploads/profiles/<?php echo $profile['profile_photo']; ?>"
+              alt="Profile Photo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 20px;">
+          <?php else: ?>
+            <span><?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?></span>
+          <?php endif; ?>
+
+          <div class="avatar-overlay"
+            style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; font-size: 0.8rem; padding: 5px; text-align: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; opacity: 0; transition: opacity 0.3s;">
+            <i class="fas fa-camera"></i>
+          </div>
         </div>
+
+        <form method="POST" enctype="multipart/form-data" id="photoForm" style="display: none;">
+          <input type="hidden" name="action" value="upload_photo">
+          <input type="file" name="profile_photo" id="profilePhotoInput" accept="image/*"
+            onchange="document.getElementById('photoForm').submit();">
+        </form>
+
+        <style>
+          .resume-avatar:hover .avatar-overlay {
+            opacity: 1 !important;
+          }
+        </style>
         <div class="resume-identity">
           <h1><?php echo htmlspecialchars(($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? '')); ?></h1>
           <h2 class="headline"><?php echo htmlspecialchars($profile['headline'] ?? 'Add your professional headline'); ?>
@@ -341,7 +401,7 @@ require_once '../includes/header.php';
                       <div class="edu-header">
                         <div class="edu-title">
                           <h4><?php echo htmlspecialchars($edu['degree']); ?><?php if ($edu['field_of_study']): ?> in
-                              <?php echo htmlspecialchars($edu['field_of_study']); ?><?php endif; ?>
+                              <?php echo htmlspecialchars($edu['field_of_study']); ?>     <?php endif; ?>
                           </h4>
                           <p class="institution"><?php echo htmlspecialchars($edu['institution']); ?></p>
                         </div>
@@ -441,12 +501,14 @@ require_once '../includes/header.php';
           <div class="form-group">
             <label for="first_name">First Name</label>
             <input type="text" id="first_name" name="first_name" class="form-control"
-              value="<?php echo htmlspecialchars($profile['first_name'] ?? ''); ?>" placeholder="Your first name" required>
+              value="<?php echo htmlspecialchars($profile['first_name'] ?? ''); ?>" placeholder="Your first name"
+              required>
           </div>
           <div class="form-group">
             <label for="last_name">Last Name</label>
             <input type="text" id="last_name" name="last_name" class="form-control"
-              value="<?php echo htmlspecialchars($profile['last_name'] ?? ''); ?>" placeholder="Your last name" required>
+              value="<?php echo htmlspecialchars($profile['last_name'] ?? ''); ?>" placeholder="Your last name"
+              required>
           </div>
         </div>
 
@@ -479,7 +541,8 @@ require_once '../includes/header.php';
         <div class="form-group">
           <label for="portfolio_url">Website</label>
           <input type="url" id="portfolio_url" name="portfolio_url" class="form-control"
-            value="<?php echo htmlspecialchars($profile['portfolio_url'] ?? ''); ?>" placeholder="https://yourwebsite.com">
+            value="<?php echo htmlspecialchars($profile['portfolio_url'] ?? ''); ?>"
+            placeholder="https://yourwebsite.com">
         </div>
 
         <div class="form-row">

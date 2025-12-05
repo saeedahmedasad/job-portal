@@ -29,6 +29,7 @@ if (isLoggedIn()) {
       $profile = $profileModel->findByUserId($currentUser['id']);
       if ($profile) {
         $currentUserName = $profile['first_name'] . ' ' . $profile['last_name'];
+        $currentUserProfilePhoto = $profile['profile_photo'] ?? null;
       }
     } elseif ($currentUser['role'] === ROLE_HR) {
       $companyModel = new Company();
@@ -81,7 +82,7 @@ $flash = getFlash();
 
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="<?php echo CSS_URL; ?>style.css?v=<?php echo time(); ?>">
-  
+
   <!-- Dashboard Stylesheet -->
   <link rel="stylesheet" href="<?php echo CSS_URL; ?>dashboard.css?v=<?php echo time(); ?>">
 
@@ -125,14 +126,15 @@ $flash = getFlash();
                 <span class="notification-badge"
                   id="notificationBadge"><?php echo $notificationCount > 99 ? '99+' : $notificationCount; ?></span>
               <?php endif; ?>
-              </button>
-            
+            </button>
+
             <!-- Notification Dropdown -->
             <div class="notification-dropdown" id="notificationDropdown">
               <div class="notification-header">
                 <h4>Notifications</h4>
                 <?php if ($notificationCount > 0): ?>
-                  <a href="<?php echo BASE_URL; ?>/notifications.php?action=mark_all_read" class="btn-text">Mark all read</a>
+                  <a href="<?php echo BASE_URL; ?>/notifications.php?action=mark_all_read" class="btn-text">Mark all
+                    read</a>
                 <?php endif; ?>
               </div>
               <div class="notification-list" id="notificationList">
@@ -172,27 +174,33 @@ $flash = getFlash();
                 <a href="<?php echo BASE_URL; ?>/notifications.php">View All Notifications</a>
               </div>
             </div>
-            </div>
+          </div>
 
           <!-- User Dropdown -->
           <div class="nav-dropdown">
             <button class="nav-dropdown-toggle">
               <div class="avatar avatar-sm">
-                <span class="initials"><?php echo getInitials($currentUserName); ?></span>
+                <?php if (isset($currentUserProfilePhoto) && $currentUserProfilePhoto): ?>
+                  <img src="<?php echo BASE_URL; ?>/uploads/profiles/<?php echo $currentUserProfilePhoto; ?>"
+                    alt="<?php echo sanitize($currentUserName); ?>"
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                <?php else: ?>
+                  <span class="initials"><?php echo getInitials($currentUserName); ?></span>
+                <?php endif; ?>
               </div>
               <span class="nav-user-name"><?php echo sanitize($currentUserName); ?></span>
               <i class="fas fa-chevron-down"></i>
             </button>
             <div class="nav-dropdown-menu">
               <?php if (hasRole(ROLE_ADMIN)): ?>
-                            <a href="<?php echo BASE_URL; ?>/admin/" class="nav-dropdown-item">
+                <a href="<?php echo BASE_URL; ?>/admin/" class="nav-dropdown-item">
                   <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
                 <a href="<?php echo BASE_URL; ?>/admin/users.php" class="nav-dropdown-item">
                   <i class="fas fa-users"></i> Manage Users
                 </a>
               <?php elseif (hasRole(ROLE_HR)): ?>
-                            <a href="<?php echo BASE_URL; ?>/hr/" class="nav-dropdown-item">
+                <a href="<?php echo BASE_URL; ?>/hr/" class="nav-dropdown-item">
                   <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
                 <a href="<?php echo BASE_URL; ?>/hr/company.php" class="nav-dropdown-item">
@@ -202,7 +210,7 @@ $flash = getFlash();
                   <i class="fas fa-file-alt"></i> Applications
                 </a>
               <?php else: ?>
-                            <a href="<?php echo BASE_URL; ?>/seeker/" class="nav-dropdown-item">
+                <a href="<?php echo BASE_URL; ?>/seeker/" class="nav-dropdown-item">
                   <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
                 <a href="<?php echo BASE_URL; ?>/seeker/profile.php" class="nav-dropdown-item">
@@ -215,8 +223,8 @@ $flash = getFlash();
                   <i class="fas fa-heart"></i> Saved Jobs
                 </a>
               <?php endif; ?>
-                    <div class="nav-dropdown-divider"></div>
-                    <a href="<?php echo BASE_URL; ?>/auth/logout.php" class="nav-dropdown-item text-error">
+              <div class="nav-dropdown-divider"></div>
+              <a href="<?php echo BASE_URL; ?>/auth/logout.php" class="nav-dropdown-item text-error">
                 <i class="fas fa-sign-out-alt"></i> Logout
               </a>
             </div>
