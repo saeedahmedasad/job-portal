@@ -105,21 +105,6 @@ include __DIR__ . '/../includes/header.php';
         </button>
       </form>
 
-      <div class="auth-divider">
-        <span>or continue with</span>
-      </div>
-
-      <div class="auth-social">
-        <button class="btn btn-social btn-google">
-          <i class="fab fa-google"></i>
-          Google
-        </button>
-        <button class="btn btn-social btn-linkedin">
-          <i class="fab fa-linkedin-in"></i>
-          LinkedIn
-        </button>
-      </div>
-
       <p class="auth-footer">
         Don't have an account?
         <a href="<?php echo BASE_URL; ?>/auth/register.php">Create one</a>

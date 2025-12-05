@@ -24,8 +24,16 @@ if (!$companyId) {
 // Get company details
 $company = $companyModel->findById($companyId);
 
-if (!$company || $company['verification_status'] !== 'verified') {
-  // Show 404 or redirect
+// Check if company exists
+if (!$company) {
+  header('Location: ' . BASE_URL . '/companies/');
+  exit;
+}
+
+// Allow admins to view unverified companies, others can only view verified
+$isAdmin = isLoggedIn() && hasRole(ROLE_ADMIN);
+if ($company['verification_status'] !== 'verified' && !$isAdmin) {
+  // Show 404 or redirect for non-admins
   header('Location: ' . BASE_URL . '/companies/');
   exit;
 }
@@ -86,9 +94,16 @@ include '../includes/header.php';
         </div>
         <div class="company-hero-info">
           <div class="company-badges">
-            <span class="verified-badge">
-              <i class="fas fa-check-circle"></i> Verified Company
-            </span>
+            <?php if ($company['verification_status'] === 'verified'): ?>
+              <span class="verified-badge">
+                <i class="fas fa-check-circle"></i> Verified Company
+              </span>
+            <?php elseif ($isAdmin): ?>
+              <span class="badge badge-warning"
+                style="background: #ff9800; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem;">
+                <i class="fas fa-clock"></i> Pending Verification
+              </span>
+            <?php endif; ?>
             <?php if ($company['industry']): ?>
               <span class="industry-badge"><?php echo htmlspecialchars($company['industry']); ?></span>
             <?php endif; ?>

@@ -76,7 +76,29 @@
 
 <script>
   // Base URL for JS
-  const BASE_URL = '<?php echo BASE_URL; ?>';
+  var BASE_URL = '<?php echo BASE_URL; ?>';
+
+  // Notification dropdown toggle
+  document.addEventListener('DOMContentLoaded', function () {
+    var notificationToggle = document.getElementById('notificationToggle');
+    var notificationDropdown = document.getElementById('notificationDropdown');
+
+    if (notificationToggle && notificationDropdown) {
+      // Toggle dropdown on click
+      notificationToggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        notificationDropdown.classList.toggle('show');
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function (e) {
+        if (!notificationToggle.contains(e.target) && !notificationDropdown.contains(e.target)) {
+          notificationDropdown.classList.remove('show');
+        }
+      });
+    }
+  });
 </script>
 </body>
 

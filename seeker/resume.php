@@ -87,6 +87,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $messageType = 'success';
       $profile = $profileModel->findByUserId($_SESSION['user_id']);
     }
+  } elseif ($action === 'use_generated_resume') {
+    // Save the generated HTML resume as PDF using provided base64 data
+    if (isset($_POST['pdf_data']) && !empty($_POST['pdf_data'])) {
+      $pdfData = $_POST['pdf_data'];
+
+      // Remove the data URL prefix
+      $pdfData = str_replace('data:application/pdf;base64,', '', $pdfData);
+      $pdfData = str_replace(' ', '+', $pdfData);
+      $pdfContent = base64_decode($pdfData);
+
+      if ($pdfContent) {
+        $filename = 'resume_' . $_SESSION['user_id'] . '_' . time() . '.pdf';
+        $uploadDir = '../uploads/resumes/';
+
+        if (!is_dir($uploadDir)) {
+          mkdir($uploadDir, 0755, true);
+        }
+
+        // Delete old resume if exists
+        if ($profile['resume_file_path'] && file_exists($uploadDir . $profile['resume_file_path'])) {
+          unlink($uploadDir . $profile['resume_file_path']);
+        }
+
+        $uploadPath = $uploadDir . $filename;
+
+        if (file_put_contents($uploadPath, $pdfContent)) {
+          $profileModel->update($profile['id'], ['resume_file_path' => $filename]);
+          $message = 'Resume generated and saved successfully!';
+          $messageType = 'success';
+          $profile = $profileModel->findByUserId($_SESSION['user_id']);
+        } else {
+          $message = 'Failed to save generated resume.';
+          $messageType = 'error';
+        }
+      } else {
+        $message = 'Invalid PDF data received.';
+        $messageType = 'error';
+      }
+    } else {
+      $message = 'No PDF data received.';
+      $messageType = 'error';
+    }
   }
 }
 
@@ -277,8 +319,20 @@ require_once '../includes/header.php';
       <!-- Resume Preview -->
       <div class="resume-preview glass-card" id="resumePreview">
         <div class="preview-header">
-          <h3><i class="fas fa-eye"></i> Resume Preview</h3>
-          <p>Based on your profile information</p>
+          <div class="preview-header-top">
+            <div>
+              <h3><i class="fas fa-eye"></i> Resume Preview</h3>
+              <p>Based on your profile information</p>
+            </div>
+            <div class="preview-actions">
+              <button onclick="downloadResumePDF()" class="btn btn-outline btn-sm">
+                <i class="fas fa-download"></i> Save as PDF
+              </button>
+              <button onclick="useAsResume()" class="btn btn-primary btn-sm">
+                <i class="fas fa-check"></i> Use as Resume
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="resume-document">
@@ -361,6 +415,12 @@ require_once '../includes/header.php';
         </div>
       </div>
     </div>
+    
+    <!-- Hidden form for submitting generated resume -->
+    <form id="useResumeForm" method="POST" style="display: none;">
+      <input type="hidden" name="action" value="use_generated_resume">
+      <input type="hidden" name="pdf_data" id="pdfDataInput">
+    </form>
   </main>
 </div>
 
@@ -498,6 +558,13 @@ require_once '../includes/header.php';
     border-bottom: 1px solid var(--border-color);
   }
 
+  .preview-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
   .preview-header h3 {
     display: flex;
     align-items: center;
@@ -507,6 +574,17 @@ require_once '../includes/header.php';
 
   .preview-header p {
     color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+
+  .preview-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .btn-sm {
+    padding: 0.5rem 1rem;
     font-size: 0.875rem;
   }
 
@@ -655,6 +733,7 @@ require_once '../includes/header.php';
   }
 </style>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
   // Drag and drop handling
   const uploadArea = document.getElementById('uploadArea');
@@ -695,6 +774,68 @@ require_once '../includes/header.php';
 
   function generatePDF() {
     window.print();
+  }
+
+  // Download resume as PDF
+  function downloadResumePDF() {
+    const element = document.querySelector('.resume-document');
+    const name = '<?php echo htmlspecialchars(($profile['first_name'] ?? '') . '_' . ($profile['last_name'] ?? '')); ?>'.replace(/\s+/g, '_');
+
+    const opt = {
+      margin: 0.5,
+      filename: name + '_Resume.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    // Show loading state
+    const btn = event.target.closest('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    btn.disabled = true;
+
+    html2pdf().set(opt).from(element).save().then(() => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }).catch((err) => {
+      console.error('PDF generation failed:', err);
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      alert('Failed to generate PDF. Please try again.');
+    });
+  }
+
+  // Use generated resume as profile resume
+  function useAsResume() {
+    const element = document.querySelector('.resume-document');
+    const name = '<?php echo htmlspecialchars(($profile['first_name'] ?? '') . '_' . ($profile['last_name'] ?? '')); ?>'.replace(/\s+/g, '_');
+
+    const opt = {
+      margin: 0.5,
+      filename: name + '_Resume.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    // Show loading state
+    const btn = event.target.closest('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    // Generate PDF and get base64 data
+    html2pdf().set(opt).from(element).outputPdf('datauristring').then((pdfDataUri) => {
+      // Submit the form with PDF data
+      document.getElementById('pdfDataInput').value = pdfDataUri;
+      document.getElementById('useResumeForm').submit();
+    }).catch((err) => {
+      console.error('PDF generation failed:', err);
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      alert('Failed to generate resume. Please try again.');
+    });
   }
 </script>
 

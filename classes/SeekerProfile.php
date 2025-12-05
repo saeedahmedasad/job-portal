@@ -339,6 +339,7 @@ class SeekerProfile
     $totalFields = 10;
     $filledFields = 0;
 
+    // Basic info fields
     if (!empty($profile['first_name']))
       $filledFields++;
     if (!empty($profile['last_name']))
@@ -351,13 +352,21 @@ class SeekerProfile
       $filledFields++;
     if (!empty($profile['bio']))
       $filledFields++;
-    if (!empty($profile['profile_photo']))
-      $filledFields++;
+
+    // Resume - important for job seekers
     if (!empty($profile['resume_file_path']))
       $filledFields++;
-    if (!empty($profile['skills']))
+
+    // Skills - check if array has items
+    if (!empty($profile['skills']) && is_array($profile['skills']) && count($profile['skills']) > 0)
       $filledFields++;
-    if (!empty($profile['experience']))
+
+    // Experience - check if array has items
+    if (!empty($profile['experience']) && is_array($profile['experience']) && count($profile['experience']) > 0)
+      $filledFields++;
+
+    // Education - check if array has items
+    if (!empty($profile['education']) && is_array($profile['education']) && count($profile['education']) > 0)
       $filledFields++;
 
     $completion = round(($filledFields / $totalFields) * 100);

@@ -88,6 +88,7 @@ CREATE TABLE seeker_profiles (
     preferred_location_type ENUM('remote', 'onsite', 'hybrid', 'any') DEFAULT 'any',
     is_available TINYINT(1) DEFAULT 1,
     profile_completion INT DEFAULT 0,
+    profile_views INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

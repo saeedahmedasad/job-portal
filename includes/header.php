@@ -8,10 +8,12 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../classes/Database.php';
 
 // Get current user info if logged in
 $currentUser = null;
 $currentUserName = 'Guest';
+$notificationCount = 0;
 
 if (isLoggedIn()) {
   require_once __DIR__ . '/../classes/User.php';
@@ -38,6 +40,17 @@ if (isLoggedIn()) {
       $currentUserName = 'Admin';
     }
   }
+
+  // Get unread notification count and notifications
+  $db = Database::getInstance()->getConnection();
+  $stmt = $db->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+  $stmt->execute([getCurrentUserId()]);
+  $notificationCount = (int) $stmt->fetchColumn();
+
+  // Get recent notifications
+  $stmt = $db->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+  $stmt->execute([getCurrentUserId()]);
+  $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // Get flash message
@@ -105,10 +118,61 @@ $flash = getFlash();
       <div class="navbar-actions">
         <?php if (isLoggedIn()): ?>
           <!-- Notifications -->
-          <button class="btn btn-icon btn-ghost nav-notification" title="Notifications">
-            <i class="far fa-bell"></i>
-            <span class="notification-badge">3</span>
-          </button>
+          <div class="nav-notification-wrapper">
+            <button class="btn btn-icon btn-ghost nav-notification" title="Notifications" id="notificationToggle">
+              <i class="far fa-bell"></i>
+              <?php if ($notificationCount > 0): ?>
+                <span class="notification-badge"
+                  id="notificationBadge"><?php echo $notificationCount > 99 ? '99+' : $notificationCount; ?></span>
+              <?php endif; ?>
+              </button>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+              <div class="notification-header">
+                <h4>Notifications</h4>
+                <?php if ($notificationCount > 0): ?>
+                  <a href="<?php echo BASE_URL; ?>/notifications.php?action=mark_all_read" class="btn-text">Mark all read</a>
+                <?php endif; ?>
+              </div>
+              <div class="notification-list" id="notificationList">
+                <?php if (empty($notifications)): ?>
+                  <div class="notification-empty">
+                    <i class="far fa-bell-slash"></i>
+                    <p>No notifications yet</p>
+                  </div>
+                <?php else: ?>
+                  <?php foreach ($notifications as $notification):
+                    $iconClass = 'fas fa-info-circle';
+                    if ($notification['type'] === 'application')
+                      $iconClass = 'fas fa-file-alt';
+                    elseif ($notification['type'] === 'interview')
+                      $iconClass = 'fas fa-calendar-check';
+                    elseif ($notification['type'] === 'message')
+                      $iconClass = 'fas fa-envelope';
+                    elseif ($notification['type'] === 'job')
+                      $iconClass = 'fas fa-briefcase';
+                    $unreadClass = $notification['is_read'] == 0 ? 'unread' : '';
+                    $link = $notification['link'] ? BASE_URL . $notification['link'] : '#';
+                    ?>
+                    <a href="<?php echo $link; ?>" class="notification-item <?php echo $unreadClass; ?>">
+                      <div class="notification-icon type-<?php echo $notification['type']; ?>">
+                        <i class="<?php echo $iconClass; ?>"></i>
+                      </div>
+                      <div class="notification-content">
+                        <div class="notification-title"><?php echo htmlspecialchars($notification['title']); ?></div>
+                        <div class="notification-message"><?php echo htmlspecialchars($notification['message']); ?></div>
+                        <div class="notification-time"><?php echo timeAgo($notification['created_at']); ?></div>
+                      </div>
+                    </a>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </div>
+              <div class="notification-footer">
+                <a href="<?php echo BASE_URL; ?>/notifications.php">View All Notifications</a>
+              </div>
+            </div>
+            </div>
 
           <!-- User Dropdown -->
           <div class="nav-dropdown">

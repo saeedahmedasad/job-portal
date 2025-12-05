@@ -8,6 +8,7 @@ require_once __DIR__ . '/../classes/Database.php';
 require_once __DIR__ . '/../classes/Job.php';
 require_once __DIR__ . '/../classes/Application.php';
 require_once __DIR__ . '/../classes/SeekerProfile.php';
+require_once __DIR__ . '/../includes/notification-helper.php';
 
 $jobModel = new Job();
 $appModel = new Application();
@@ -27,8 +28,14 @@ if (!$job || $job['status'] !== 'active' || $job['verification_status'] !== 'ver
   redirect(BASE_URL . '/jobs/');
 }
 
-// Increment view count
-$jobModel->incrementViews($jobId);
+// Increment view count only once per session per job
+if (!isset($_SESSION['viewed_jobs'])) {
+  $_SESSION['viewed_jobs'] = [];
+}
+if (!in_array($jobId, $_SESSION['viewed_jobs'])) {
+  $jobModel->incrementViews($jobId);
+  $_SESSION['viewed_jobs'][] = $jobId;
+}
 
 // Check if user has already applied
 $hasApplied = false;
@@ -116,6 +123,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply'])) {
   ]);
 
   if ($applicationId) {
+    // Get seeker name for notification
+    $profileModel = new SeekerProfile();
+    $seekerProfile = $profileModel->findByUserId(getCurrentUserId());
+    $seekerName = $seekerProfile ? $seekerProfile['first_name'] . ' ' . $seekerProfile['last_name'] : 'A candidate';
+
+    // Notify HR about new application
+    notifyNewApplication(
+      $job['posted_by'],
+      $seekerName,
+      $job['title'],
+      $applicationId
+    );
+
     setFlash('success', 'Application submitted successfully!');
     redirect(BASE_URL . '/seeker/applications.php');
   } else {
@@ -151,7 +171,8 @@ include __DIR__ . '/../includes/header.php';
             <div class="company-info">
               <h1 class="job-title"><?php echo sanitize($job['title']); ?></h1>
               <div class="company-meta">
-                <a href="<?php echo BASE_URL; ?>/companies/profile.php?id=<?php echo $job['company_id']; ?>" class="company-name">
+                <a href="<?php echo BASE_URL; ?>/companies/profile.php?id=<?php echo $job['company_id']; ?>"
+                  class="company-name">
                   <?php echo sanitize($job['company_name']); ?>
                 </a>
                 <?php if ($job['industry']): ?>
@@ -255,7 +276,7 @@ include __DIR__ . '/../includes/header.php';
                 foreach ($skills as $skill):
                   ?>
                   <span class="tag tag-primary"><?php echo sanitize($skill); ?></span>
-                <?php
+                  <?php
                 endforeach;
               endif;
               ?>
@@ -281,42 +302,49 @@ include __DIR__ . '/../includes/header.php';
             </div>
           <?php endif; ?>
 
-          <?php if ($hasApplied): ?>
-            <div class="applied-status">
-              <i class="fas fa-check-circle"></i>
-              <span>You have applied</span>
-            </div>
-            <a href="<?php echo BASE_URL; ?>/seeker/applications.php" class="btn btn-secondary btn-block">
-              View My Applications
-            </a>
-          <?php elseif (isLoggedIn() && hasRole(ROLE_HR)): ?>
-            <div class="alert alert-info">
-              <i class="fas fa-info-circle"></i>
-              <span>Employers cannot apply to jobs</span>
-            </div>
-          <?php else: ?>
-            <button class="btn btn-primary btn-block btn-lg" data-modal-open="applyModal">
-              <i class="fas fa-paper-plane"></i> Apply Now
-            </button>
-          <?php endif; ?>
-
-          <?php if (isLoggedIn() && hasRole(ROLE_SEEKER)): ?>
-            <form method="POST" style="margin: 0;">
-              <input type="hidden" name="save_job" value="1">
-              <button type="submit" class="btn <?php echo $hasSaved ? 'btn-primary' : 'btn-secondary'; ?> btn-block">
-                <i class="<?php echo $hasSaved ? 'fas' : 'far'; ?> fa-bookmark"></i>
-                <?php echo $hasSaved ? 'Saved' : 'Save Job'; ?>
+          <div class="job-action-buttons">
+            <?php if ($hasApplied): ?>
+              <div class="applied-status">
+                <i class="fas fa-check-circle"></i>
+                <span>You have applied</span>
+              </div>
+              <a href="<?php echo BASE_URL; ?>/seeker/applications.php" class="btn btn-secondary btn-block">
+                View My Applications
+              </a>
+            <?php elseif (isLoggedIn() && hasRole(ROLE_HR)): ?>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <span>Employers cannot apply to jobs</span>
+              </div>
+            <?php elseif (isLoggedIn() && hasRole(ROLE_ADMIN)): ?>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <span>Admins cannot apply to jobs</span>
+              </div>
+            <?php else: ?>
+              <button class="btn btn-primary btn-block btn-lg" data-modal-open="applyModal">
+                <i class="fas fa-paper-plane"></i> Apply Now
               </button>
-            </form>
-          <?php else: ?>
-            <a href="<?php echo BASE_URL; ?>/auth/login.php" class="btn btn-secondary btn-block">
-            <i class="far fa-bookmark"></i> Save Job
-            </a>
-          <?php endif; ?>
+            <?php endif; ?>
 
-          <button class="btn btn-ghost btn-block">
-            <i class="fas fa-share-alt"></i> Share
-          </button>
+            <?php if (isLoggedIn() && hasRole(ROLE_SEEKER)): ?>
+              <form method="POST" style="margin: 0;">
+                <input type="hidden" name="save_job" value="1">
+                <button type="submit" class="btn <?php echo $hasSaved ? 'btn-primary' : 'btn-secondary'; ?> btn-block">
+                  <i class="<?php echo $hasSaved ? 'fas' : 'far'; ?> fa-bookmark"></i>
+                  <?php echo $hasSaved ? 'Saved' : 'Save Job'; ?>
+                </button>
+              </form>
+            <?php else: ?>
+              <a href="<?php echo BASE_URL; ?>/auth/login.php" class="btn btn-secondary btn-block">
+                <i class="far fa-bookmark"></i> Save Job
+              </a>
+            <?php endif; ?>
+
+            <button class="btn btn-ghost btn-block">
+              <i class="fas fa-share-alt"></i> Share
+            </button>
+          </div>
         </div>
 
         <!-- Company Card -->
@@ -457,6 +485,13 @@ include __DIR__ . '/../includes/header.php';
   .job-detail-page {
     padding: 100px 0 var(--spacing-3xl);
     min-height: 100vh;
+  }
+
+  .job-action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
   }
 
   .job-detail-layout {

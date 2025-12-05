@@ -8,6 +8,7 @@ require_once '../config/config.php';
 require_once '../classes/Database.php';
 require_once '../classes/User.php';
 require_once '../classes/Application.php';
+require_once '../includes/notification-helper.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== ROLE_HR) {
   header('Location: ' . BASE_URL . '/auth/login.php');
@@ -67,6 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if ($applicationModel->updateStatus($appId, $newStatus, $notes)) {
         $message = 'Application status updated successfully!';
         $messageType = 'success';
+
+        // Send notification to the applicant
+        notifyApplicationStatusChange(
+          $application['seeker_id'],
+          $application['job_title'],
+          $newStatus,
+          $appId
+        );
+
         $application['status'] = $newStatus;
         $application['status_notes'] = $notes;
       } else {
