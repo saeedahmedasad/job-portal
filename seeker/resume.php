@@ -141,7 +141,16 @@ require_once '../includes/header.php';
   <aside class="dashboard-sidebar">
     <div class="sidebar-header">
       <div class="seeker-avatar">
-        <?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?>
+        <?php
+        $avatarPath = '../uploads/avatars/' . ($profile['profile_photo'] ?? '');
+        if (!empty($profile['profile_photo']) && file_exists($avatarPath)):
+          ?>
+          <img src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo $profile['profile_photo']; ?>"
+            alt="<?php echo htmlspecialchars($profile['first_name'] ?? ''); ?>"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        <?php else: ?>
+          <?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?>
+        <?php endif; ?>
       </div>
       <h3><?php echo htmlspecialchars(($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? '')); ?></h3>
       <span class="role-badge seeker">Job Seeker</span>
@@ -387,7 +396,8 @@ require_once '../includes/header.php';
                 <div class="resume-item">
                   <div class="item-header">
                     <h3><?php echo htmlspecialchars($edu['degree'] ?? ''); ?> in
-                      <?php echo htmlspecialchars($edu['field_of_study'] ?? ''); ?></h3>
+                      <?php echo htmlspecialchars($edu['field_of_study'] ?? ''); ?>
+                    </h3>
                     <span class="dates">
                       <?php echo date('Y', strtotime($edu['start_date'] ?? 'now')); ?> -
                       <?php echo $edu['is_current'] ? 'Present' : date('Y', strtotime($edu['end_date'] ?? 'now')); ?>
@@ -415,7 +425,7 @@ require_once '../includes/header.php';
         </div>
       </div>
     </div>
-    
+
     <!-- Hidden form for submitting generated resume -->
     <form id="useResumeForm" method="POST" style="display: none;">
       <input type="hidden" name="action" value="use_generated_resume">

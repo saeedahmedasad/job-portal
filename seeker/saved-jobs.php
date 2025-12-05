@@ -105,7 +105,16 @@ include '../includes/header.php';
   <aside class="dashboard-sidebar">
     <div class="sidebar-header">
       <div class="seeker-avatar">
-        <?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?>
+        <?php
+        $avatarPath = '../uploads/avatars/' . ($profile['profile_photo'] ?? '');
+        if (!empty($profile['profile_photo']) && file_exists($avatarPath)):
+          ?>
+          <img src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo $profile['profile_photo']; ?>"
+            alt="<?php echo htmlspecialchars($profile['first_name'] ?? ''); ?>"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        <?php else: ?>
+          <?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?>
+        <?php endif; ?>
       </div>
       <h3><?php echo htmlspecialchars(($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? '')); ?></h3>
       <span class="role-badge seeker">Job Seeker</span>
@@ -151,10 +160,10 @@ include '../includes/header.php';
 
     <div class="sidebar-footer">
       <a href="<?php echo BASE_URL; ?>/auth/logout.php" class="logout-btn">
-    <i class="fas fa-sign-out-alt"></i>
-    <span>Logout</span>
-  </a>
-</div>
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </a>
+    </div>
   </aside>
 
   <!-- Main Content -->
@@ -173,7 +182,8 @@ include '../includes/header.php';
 
     <?php if ($message): ?>
       <div class="alert alert-<?php echo $messageType; ?>">
-        <i class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : ($messageType === 'error' ? 'exclamation-circle' : 'info-circle'); ?>"></i>
+        <i
+          class="fas fa-<?php echo $messageType === 'success' ? 'check-circle' : ($messageType === 'error' ? 'exclamation-circle' : 'info-circle'); ?>"></i>
         <?php echo $message; ?>
       </div>
     <?php endif; ?>
@@ -223,9 +233,9 @@ include '../includes/header.php';
         <div class="stat-content">
           <h3><?php echo $expiredJobs; ?></h3>
           <p>Expired</p>
-          </div>
-          <div class="stat-footer">
-            <span class="stat-label">No longer open</span>
+        </div>
+        <div class="stat-footer">
+          <span class="stat-label">No longer open</span>
         </div>
       </div>
     </div>
@@ -242,7 +252,7 @@ include '../includes/header.php';
           <a href="<?php echo BASE_URL; ?>/jobs" class="btn btn-primary">
             <i class="fas fa-search"></i> Browse Jobs
           </a>
-          </div>
+        </div>
       </div>
     <?php else: ?>
       <!-- Filter Section -->
@@ -257,8 +267,8 @@ include '../includes/header.php';
                   <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
                 <?php endforeach; ?>
               </select>
-              </div>
-              <div class="filter-group">
+            </div>
+            <div class="filter-group">
               <label><i class="fas fa-toggle-on"></i> Status</label>
               <select id="filterStatus" onchange="filterJobs()">
                 <option value="">All Status</option>
@@ -293,7 +303,7 @@ include '../includes/header.php';
           $daysLeft = $deadline ? (new DateTime())->diff($deadline)->days : null;
           $isExpiringSoon = $deadline && $daysLeft <= 3 && $isActive;
           ?>
-                              <div class="glass-card saved-job-card <?php echo !$isActive ? 'expired' : ''; ?>"
+          <div class="glass-card saved-job-card <?php echo !$isActive ? 'expired' : ''; ?>"
             data-category="<?php echo htmlspecialchars($sj['category_name'] ?? ''); ?>"
             data-status="<?php echo $isActive ? ($isApplied ? 'applied' : 'active') : 'expired'; ?>"
             data-saved="<?php echo strtotime($sj['saved_at']); ?>"
@@ -304,28 +314,28 @@ include '../includes/header.php';
             <div class="card-header-actions">
               <div class="job-badges">
                 <?php if (!$isActive): ?>
-                                                <span class="status-badge expired"><i class="fas fa-ban"></i> Closed</span>
-                                          <?php elseif ($isExpiringSoon): ?>
-                                          <span class="status-badge urgent"><i class="fas fa-fire"></i> Expiring Soon</span>
-                                          <?php elseif ($isApplied): ?>
-                                          <span class="status-badge applied"><i class="fas fa-check"></i> Applied</span>
-                                          <?php else: ?>
-                                          <span class="status-badge active"><i class="fas fa-circle"></i> Active</span>
-                                          <?php endif; ?>
-                                  </div>
-                                  <button class="save-btn saved" onclick="toggleSave(<?php echo $sj['id']; ?>, this)" title="Remove from saved">
-                                <i class="fas fa-heart"></i>
-                              </button>
+                  <span class="status-badge expired"><i class="fas fa-ban"></i> Closed</span>
+                <?php elseif ($isExpiringSoon): ?>
+                  <span class="status-badge urgent"><i class="fas fa-fire"></i> Expiring Soon</span>
+                <?php elseif ($isApplied): ?>
+                  <span class="status-badge applied"><i class="fas fa-check"></i> Applied</span>
+                <?php else: ?>
+                  <span class="status-badge active"><i class="fas fa-circle"></i> Active</span>
+                <?php endif; ?>
+              </div>
+              <button class="save-btn saved" onclick="toggleSave(<?php echo $sj['id']; ?>, this)" title="Remove from saved">
+                <i class="fas fa-heart"></i>
+              </button>
             </div>
 
             <!-- Company Info -->
             <div class="job-company-row">
               <div class="company-logo-wrapper">
                 <?php if ($sj['company_logo']): ?>
-                                                <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo htmlspecialchars($sj['company_logo']); ?>"
+                  <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo htmlspecialchars($sj['company_logo']); ?>"
                     alt="<?php echo htmlspecialchars($sj['company_name']); ?>">
                 <?php else: ?>
-                                                <span class="logo-placeholder"><?php echo strtoupper(substr($sj['company_name'], 0, 2)); ?></span>
+                  <span class="logo-placeholder"><?php echo strtoupper(substr($sj['company_name'], 0, 2)); ?></span>
                 <?php endif; ?>
               </div>
               <div class="company-details">
@@ -364,18 +374,18 @@ include '../includes/header.php';
 
             <!-- Salary -->
             <?php if ($sj['salary_min'] || $sj['salary_max']): ?>
-                                            <div class="job-salary">
-                                              <i class="fas fa-money-bill-wave"></i>
-                                              <span class="salary-amount">
-                                            <?php
-                                            if ($sj['salary_min'] && $sj['salary_max']) {
-                                        echo '$' . number_format($sj['salary_min']) . ' - $' . number_format($sj['salary_max']);
-                                      } elseif ($sj['salary_min']) {
-                                        echo 'From $' . number_format($sj['salary_min']);
-                                      } else {
-                                        echo 'Up to $' . number_format($sj['salary_max']);
-                                      }
-                                      ?>
+              <div class="job-salary">
+                <i class="fas fa-money-bill-wave"></i>
+                <span class="salary-amount">
+                  <?php
+                  if ($sj['salary_min'] && $sj['salary_max']) {
+                    echo '$' . number_format($sj['salary_min']) . ' - $' . number_format($sj['salary_max']);
+                  } elseif ($sj['salary_min']) {
+                    echo 'From $' . number_format($sj['salary_min']);
+                  } else {
+                    echo 'Up to $' . number_format($sj['salary_max']);
+                  }
+                  ?>
                 </span>
                 <span class="salary-period">/year</span>
               </div>
@@ -389,11 +399,12 @@ include '../includes/header.php';
                   <span><?php echo $daysLeft; ?> days left to apply</span>
                 </div>
                 <div class="deadline-progress">
-                  <div class="progress-fill" style="width: <?php echo max(0, min(100, 100 - ($daysLeft / 30 * 100))); ?>%"></div>
+                  <div class="progress-fill" style="width: <?php echo max(0, min(100, 100 - ($daysLeft / 30 * 100))); ?>%">
+                  </div>
                 </div>
               </div>
             <?php endif; ?>
-            
+
             <!-- Card Footer -->
             <div class="card-footer">
               <div class="saved-date">
@@ -402,17 +413,17 @@ include '../includes/header.php';
               </div>
               <div class="card-actions">
                 <?php if ($isActive && !$isApplied): ?>
-                                                <a href="<?php echo BASE_URL; ?>/jobs/view.php?id=<?php echo $sj['id']; ?>" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-paper-plane"></i> Apply Now
-                                          </a>
-                                          <?php elseif ($isApplied): ?>
-                                                <a href="<?php echo BASE_URL; ?>/seeker/applications.php" class="btn btn-outline btn-sm">
-                                            <i class="fas fa-eye"></i> View Status
-                                          </a>
-                                          <?php else: ?>
-                                                <span class="text-muted"><i class="fas fa-ban"></i> No longer accepting</span>
-                                          <?php endif; ?>
-                                          </div>
+                  <a href="<?php echo BASE_URL; ?>/jobs/view.php?id=<?php echo $sj['id']; ?>" class="btn btn-primary btn-sm">
+                    <i class="fas fa-paper-plane"></i> Apply Now
+                  </a>
+                <?php elseif ($isApplied): ?>
+                  <a href="<?php echo BASE_URL; ?>/seeker/applications.php" class="btn btn-outline btn-sm">
+                    <i class="fas fa-eye"></i> View Status
+                  </a>
+                <?php else: ?>
+                  <span class="text-muted"><i class="fas fa-ban"></i> No longer accepting</span>
+                <?php endif; ?>
+              </div>
             </div>
           </div>
         <?php endforeach; ?>
@@ -868,8 +879,15 @@ include '../includes/header.php';
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
   }
 
   /* Save Button */
@@ -995,11 +1013,30 @@ include '../includes/header.php';
     opacity: 0.7;
   }
 
-  .tag.type-full-time { color: var(--primary-color); border-color: rgba(0, 230, 118, 0.2); }
-  .tag.type-part-time { color: #64b5f6; border-color: rgba(100, 181, 246, 0.2); }
-  .tag.type-contract { color: #ffc107; border-color: rgba(255, 193, 7, 0.2); }
-  .tag.type-remote { color: #ba68c8; border-color: rgba(186, 104, 200, 0.2); }
-  .tag.type-internship { color: #4dd0e1; border-color: rgba(77, 208, 225, 0.2); }
+  .tag.type-full-time {
+    color: var(--primary-color);
+    border-color: rgba(0, 230, 118, 0.2);
+  }
+
+  .tag.type-part-time {
+    color: #64b5f6;
+    border-color: rgba(100, 181, 246, 0.2);
+  }
+
+  .tag.type-contract {
+    color: #ffc107;
+    border-color: rgba(255, 193, 7, 0.2);
+  }
+
+  .tag.type-remote {
+    color: #ba68c8;
+    border-color: rgba(186, 104, 200, 0.2);
+  }
+
+  .tag.type-internship {
+    color: #4dd0e1;
+    border-color: rgba(77, 208, 225, 0.2);
+  }
 
   /* Salary */
   .job-salary {
@@ -1382,7 +1419,7 @@ include '../includes/header.php';
   }
 
   // Add smooth entrance animation on load
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     const cards = document.querySelectorAll('.saved-job-card');
     cards.forEach((card, index) => {
       card.style.opacity = '0';

@@ -139,11 +139,20 @@ include '../includes/header.php';
   <aside class="dashboard-sidebar">
     <div class="sidebar-header">
       <div class="seeker-avatar">
-        <?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?>
+        <?php
+        $avatarPath = '../uploads/avatars/' . ($profile['profile_photo'] ?? '');
+        if (!empty($profile['profile_photo']) && file_exists($avatarPath)):
+          ?>
+          <img src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo $profile['profile_photo']; ?>"
+            alt="<?php echo htmlspecialchars($profile['first_name'] ?? ''); ?>"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        <?php else: ?>
+          <?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?>
+        <?php endif; ?>
       </div>
       <h3><?php echo htmlspecialchars(($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? '')); ?></h3>
       <span class="role-badge seeker">Job Seeker</span>
-      </div>
+    </div>
 
     <nav class="sidebar-nav">
       <a href="<?php echo BASE_URL; ?>/seeker/index.php" class="nav-item">
@@ -182,10 +191,10 @@ include '../includes/header.php';
 
     <div class="sidebar-footer">
       <a href="<?php echo BASE_URL; ?>/auth/logout.php" class="logout-btn">
-    <i class="fas fa-sign-out-alt"></i>
-    <span>Logout</span>
-  </a>
-</div>
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </a>
+    </div>
   </aside>
 
   <!-- Main Content -->
@@ -958,13 +967,13 @@ include '../includes/header.php';
     align-items: flex-start;
   }
 
-  .detail-row > i {
+  .detail-row>i {
     width: 20px;
     color: var(--primary-color, #00E676);
     margin-top: 0.25rem;
   }
 
-  .detail-row > div {
+  .detail-row>div {
     flex: 1;
   }
 
@@ -1070,7 +1079,7 @@ include '../includes/header.php';
     color: var(--text-muted, #666);
   }
 
-  .day-event-card > i {
+  .day-event-card>i {
     color: var(--text-muted, #666);
   }
 
@@ -1086,8 +1095,8 @@ include '../includes/header.php';
 <script>
   // Store all events data for JavaScript access
   const eventsData = <?php echo json_encode($monthEvents); ?>;
-    const upcomingEventsData = <?php echo json_encode($upcomingEvents); ?>;
-    const eventsByDate = <?php echo json_encode($eventsByDate); ?>;
+  const upcomingEventsData = <?php echo json_encode($upcomingEvents); ?>;
+  const eventsByDate = <?php echo json_encode($eventsByDate); ?>;
 
   function showEventDetails(eventId) {
     const modal = document.getElementById('eventModal');
@@ -1191,14 +1200,14 @@ include '../includes/header.php';
   function showDayEvents(dateStr) {
     const modal = document.getElementById('eventModal');
     const body = document.getElementById('eventModalBody');
-    
+
     const events = eventsByDate[dateStr] || [];
     const date = new Date(dateStr + 'T12:00:00');
     const formattedDate = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    
+
     // Update modal title
     document.querySelector('#eventModal .modal-header h3').textContent = formattedDate;
-    
+
     if (events.length === 0) {
       body.innerHTML = `<div class="event-detail-content"><p class="text-center text-muted">No interviews scheduled for this day.</p></div>`;
     } else {
@@ -1206,7 +1215,7 @@ include '../includes/header.php';
       events.forEach(event => {
         const eventTime = new Date('2000-01-01T' + event.event_time);
         const formattedTime = eventTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-        
+
         html += `
           <div class="day-event-card" onclick="showEventDetails(${event.id})">
             <div class="day-event-time">${formattedTime}</div>
@@ -1221,7 +1230,7 @@ include '../includes/header.php';
       html += '</div>';
       body.innerHTML = html;
     }
-    
+
     modal.classList.add('active');
   }
 

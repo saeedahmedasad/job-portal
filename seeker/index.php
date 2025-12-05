@@ -100,7 +100,8 @@ if ($profile && !empty($profile['skills'])) {
   $skills = is_array($profile['skills']) ? $profile['skills'] : (json_decode($profile['skills'], true) ?: []);
   if (!empty($skills)) {
     $skillPatterns = array_map(function ($s) {
-      return '%' . $s . '%'; }, array_slice($skills, 0, 5));
+      return '%' . $s . '%';
+    }, array_slice($skills, 0, 5));
     $placeholders = str_repeat('j.skills_required LIKE ? OR ', count($skillPatterns) - 1) . 'j.skills_required LIKE ?';
 
     $sql = "SELECT j.*, c.company_name, c.logo 
@@ -166,7 +167,16 @@ require_once '../includes/header.php';
   <aside class="dashboard-sidebar">
     <div class="sidebar-header">
       <div class="seeker-avatar">
-        <?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?>
+        <?php
+        $avatarPath = '../uploads/avatars/' . ($profile['profile_photo'] ?? '');
+        if (!empty($profile['profile_photo']) && file_exists($avatarPath)):
+          ?>
+          <img src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo $profile['profile_photo']; ?>"
+            alt="<?php echo htmlspecialchars($profile['first_name'] ?? ''); ?>"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        <?php else: ?>
+          <?php echo strtoupper(substr($profile['first_name'] ?? 'U', 0, 1)); ?>
+        <?php endif; ?>
       </div>
       <h3><?php echo htmlspecialchars(($profile['first_name'] ?? '') . ' ' . ($profile['last_name'] ?? '')); ?></h3>
       <span class="role-badge seeker">Job Seeker</span>
