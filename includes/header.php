@@ -178,7 +178,13 @@ $flash = getFlash();
           <div class="nav-dropdown">
             <button class="nav-dropdown-toggle">
               <div class="avatar avatar-sm">
-                <span class="initials"><?php echo getInitials($currentUserName); ?></span>
+                <?php if (!empty($currentUser) && $currentUser['role'] === ROLE_SEEKER && !empty($profile['profile_photo'])): ?>
+                  <img src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo htmlspecialchars($profile['profile_photo']); ?>" alt="Avatar">
+                <?php elseif (!empty($currentUser) && $currentUser['role'] === ROLE_HR && !empty($company['logo'])): ?>
+                  <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo htmlspecialchars($company['logo']); ?>" alt="Company Logo">
+                <?php else: ?>
+                  <span class="initials"><?php echo getInitials($currentUserName); ?></span>
+                <?php endif; ?>
               </div>
               <span class="nav-user-name"><?php echo sanitize($currentUserName); ?></span>
               <i class="fas fa-chevron-down"></i>
