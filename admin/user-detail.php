@@ -221,8 +221,8 @@ include '../includes/header.php';
             <div class="detail-item">
               <span class="label">Resume</span>
               <span class="value">
-                <a href="<?php echo BASE_URL; ?>/uploads/resumes/<?php echo $profile['resume_file_path']; ?>" target="_blank"
-                  class="btn btn-sm btn-outline-primary">
+                <a href="<?php echo BASE_URL; ?>/uploads/resumes/<?php echo $profile['resume_file_path']; ?>"
+                  target="_blank" class="btn btn-sm btn-outline-primary">
                   <i class="fas fa-file-pdf"></i> View Resume
                 </a>
               </span>
