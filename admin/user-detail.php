@@ -425,6 +425,7 @@ include '../includes/header.php';
     max-width: 1400px;
     margin: 0 auto;
     padding: 2rem;
+    padding-top: 100px;
   }
 
   .admin-header {
@@ -714,6 +715,7 @@ include '../includes/header.php';
   @media (max-width: 768px) {
     .admin-container {
       padding: 1rem;
+      padding-top: 90px;
     }
 
     .user-header {
