@@ -28,8 +28,14 @@ if (!$job || $job['status'] !== 'active' || $job['verification_status'] !== 'ver
   redirect(BASE_URL . '/jobs/');
 }
 
-// Increment view count
-$jobModel->incrementViews($jobId);
+// Increment view count only once per session per job
+if (!isset($_SESSION['viewed_jobs'])) {
+  $_SESSION['viewed_jobs'] = [];
+}
+if (!in_array($jobId, $_SESSION['viewed_jobs'])) {
+  $jobModel->incrementViews($jobId);
+  $_SESSION['viewed_jobs'][] = $jobId;
+}
 
 // Check if user has already applied
 $hasApplied = false;
