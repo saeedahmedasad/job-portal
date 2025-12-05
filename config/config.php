@@ -266,7 +266,7 @@ function timeAgo(?string $datetime): string
   $now = time();
   $diff = $now - $time;
 
-  // Handle future dates
+  // Handle future dates 
   if ($diff < 0) {
     return 'Just now';
   }

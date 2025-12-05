@@ -336,7 +336,8 @@ class SeekerProfile
     if (!$profile)
       return 0;
 
-    $totalFields = 10;
+    // Include profile photo as part of completion
+    $totalFields = 11;
     $filledFields = 0;
 
     // Basic info fields
@@ -355,6 +356,10 @@ class SeekerProfile
 
     // Resume - important for job seekers
     if (!empty($profile['resume_file_path']))
+      $filledFields++;
+
+    // Profile photo
+    if (!empty($profile['profile_photo']))
       $filledFields++;
 
     // Skills - check if array has items
