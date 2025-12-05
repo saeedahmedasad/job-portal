@@ -36,6 +36,7 @@ if (isLoggedIn()) {
       $company = $companyModel->findByHRUserId($currentUser['id']);
       if ($company) {
         $currentUserName = $company['company_name'];
+        $currentUserCompanyLogo = $company['logo'] ?? null;
       }
     } else {
       $currentUserName = 'Admin';
@@ -181,10 +182,18 @@ $flash = getFlash();
             <button class="nav-dropdown-toggle">
               <div class="avatar avatar-sm">
                 <?php
+                // Check for seeker profile photo
                 $avatarPath = __DIR__ . '/../uploads/avatars/' . ($currentUserProfilePhoto ?? '');
+                // Check for HR company logo
+                $logoPath = __DIR__ . '/../uploads/logos/' . ($currentUserCompanyLogo ?? '');
+                
                 if (isset($currentUserProfilePhoto) && $currentUserProfilePhoto && file_exists($avatarPath)):
-                  ?>
+                ?>
                   <img src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo $currentUserProfilePhoto; ?>"
+                    alt="<?php echo sanitize($currentUserName); ?>"
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                <?php elseif (isset($currentUserCompanyLogo) && $currentUserCompanyLogo && file_exists($logoPath)): ?>
+                  <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo $currentUserCompanyLogo; ?>"
                     alt="<?php echo sanitize($currentUserName); ?>"
                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                 <?php else: ?>

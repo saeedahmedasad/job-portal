@@ -308,9 +308,18 @@ require_once '../includes/header.php';
   <aside class="dashboard-sidebar">
     <div class="sidebar-header">
       <div class="hr-avatar">
-        <i class="fas fa-user-tie"></i>
+        <?php
+        $logoPath = '../uploads/logos/' . ($company['logo'] ?? '');
+        if ($company && !empty($company['logo']) && file_exists($logoPath)):
+          ?>
+          <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo $company['logo']; ?>"
+            alt="<?php echo htmlspecialchars($company['company_name']); ?>"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        <?php else: ?>
+          <i class="fas fa-user-tie"></i>
+        <?php endif; ?>
       </div>
-      <h3><?php echo htmlspecialchars($hr['email']); ?></h3>
+      <h3><?php echo htmlspecialchars($company ? $company['company_name'] : $hr['email']); ?></h3>
       <span class="role-badge hr">HR / Recruiter</span>
       <?php if ($company): ?>
         <p class="company-name">
