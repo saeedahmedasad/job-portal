@@ -112,6 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $action = $_POST['action'] ?? '';
 
   if ($action === 'create_event') {
+    // Generate unique meeting token
+    $meetingToken = bin2hex(random_bytes(16)); // 32 character token
+    $meetingLink = BASE_URL . '/meeting.php?id=' . $meetingToken;
+
     $eventData = [
       'hr_user_id' => $_SESSION['user_id'],
       'seeker_user_id' => (int) $_POST['seeker_id'],
@@ -122,7 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       'event_time' => $_POST['event_time'],
       'duration_minutes' => (int) $_POST['duration'],
       'location' => trim($_POST['location'] ?? ''),
-      'meeting_link' => trim($_POST['meeting_link'] ?? ''),
+      'meeting_link' => $meetingLink,
+      'meeting_token' => $meetingToken,
       'description' => trim($_POST['notes'] ?? ''),
       'status' => 'scheduled'
     ];
@@ -555,9 +560,12 @@ require_once '../includes/header.php';
           </div>
 
           <div class="form-group">
-            <label for="meeting_link">Meeting Link</label>
-            <input type="url" id="meeting_link" name="meeting_link" class="form-control"
-              placeholder="https://zoom.us/j/... or Google Meet link">
+            <label>Video Meeting</label>
+            <div class="meeting-info-box"
+              style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 1rem;">
+              <i class="fas fa-video" style="color: var(--primary-color); margin-right: 0.5rem;"></i>
+              <span>A JobNexus meeting link will be automatically generated when you schedule this interview.</span>
+            </div>
           </div>
 
           <div class="form-group">

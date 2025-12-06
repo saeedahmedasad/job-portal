@@ -447,12 +447,12 @@ require_once '../includes/header.php';
                     <?php endif; ?>
                   </div>
                   <div class="timeline-content">
-                    <h4><?php echo htmlspecialchars($app['job_title']); ?></h4>
-                    <p class="company"><?php echo htmlspecialchars($app['company_name']); ?></p>
+                    <h4><?php echo htmlspecialchars($app['job_title'] ?? ''); ?></h4>
+                    <p class="company"><?php echo htmlspecialchars($app['company_name'] ?? ''); ?></p>
                     <div class="timeline-meta">
                       <span class="location">
                         <i class="fas fa-map-marker-alt"></i>
-                        <?php echo htmlspecialchars($app['location']); ?>
+                        <?php echo htmlspecialchars($app['location'] ?? 'Not specified'); ?>
                       </span>
                       <span class="date">
                         Applied <?php echo date('M j', strtotime($app['applied_at'])); ?>
@@ -549,14 +549,14 @@ require_once '../includes/header.php';
                 <div class="job-card-title">
                   <h4>
                     <a href="<?php echo BASE_URL; ?>/jobs/view.php?id=<?php echo $job['id']; ?>">
-                      <?php echo htmlspecialchars($job['title']); ?>
+                      <?php echo htmlspecialchars($job['title'] ?? ''); ?>
                     </a>
                   </h4>
-                  <p><?php echo htmlspecialchars($job['company_name']); ?></p>
+                  <p><?php echo htmlspecialchars($job['company_name'] ?? ''); ?></p>
                 </div>
               </div>
               <div class="job-card-meta">
-                <span><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($job['location']); ?></span>
+                <span><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($job['location'] ?? 'Not specified'); ?></span>
                 <span class="job-type-badge <?php echo $job['job_type']; ?>">
                   <?php echo ucfirst(str_replace('-', ' ', $job['job_type'])); ?>
                 </span>
