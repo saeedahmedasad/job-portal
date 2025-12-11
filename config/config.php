@@ -14,7 +14,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Timezone
-date_default_timezone_set('UTC');
+date_default_timezone_set('Asia/Karachi');
 
 // Base URL Configuration
 define('BASE_URL', 'http://localhost/job-portal');

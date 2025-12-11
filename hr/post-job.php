@@ -387,7 +387,7 @@ require_once '../includes/header.php';
               <div class="form-group">
                 <label for="vacancies">Number of Vacancies</label>
                 <input type="number" id="vacancies" name="vacancies" class="form-control"
-                  value="<?php echo htmlspecialchars($_POST['vacancies'] ?? '1'); ?>" min="1" max="100">
+                  value="<?php echo htmlspecialchars($_POST['vacancies'] ?? '1'); ?>" min="1" max="100" step="1">
               </div>
             </div>
 
@@ -447,12 +447,12 @@ require_once '../includes/header.php';
               <div class="form-group">
                 <label for="salary_min">Minimum Salary ($/year)</label>
                 <input type="number" id="salary_min" name="salary_min" class="form-control"
-                  value="<?php echo htmlspecialchars($_POST['salary_min'] ?? ''); ?>" placeholder="50000" min="0">
+                  value="<?php echo htmlspecialchars($_POST['salary_min'] ?? ''); ?>" placeholder="50000" min="0" step="100">
               </div>
               <div class="form-group">
                 <label for="salary_max">Maximum Salary ($/year)</label>
                 <input type="number" id="salary_max" name="salary_max" class="form-control"
-                  value="<?php echo htmlspecialchars($_POST['salary_max'] ?? ''); ?>" placeholder="80000" min="0">
+                  value="<?php echo htmlspecialchars($_POST['salary_max'] ?? ''); ?>" placeholder="80000" min="0" step="100">
               </div>
             </div>
             <small class="form-hint">Salary information increases application rates by up to 30%</small>

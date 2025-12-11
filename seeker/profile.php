@@ -1,4 +1,5 @@
 <?php
+
 /**
  * JobNexus - Seeker Profile Page
  * Resume-style professional profile display and edit
@@ -253,7 +254,7 @@ require_once '../includes/header.php';
           <?php
           $profilePhotoPath = __DIR__ . '/../uploads/avatars/' . ($profile['profile_photo'] ?? '');
           if (!empty($profile['profile_photo']) && file_exists($profilePhotoPath)):
-            ?>
+          ?>
             <img src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo $profile['profile_photo']; ?>"
               alt="Profile Photo">
           <?php else: ?>
@@ -437,7 +438,7 @@ require_once '../includes/header.php';
                       <div class="edu-header">
                         <div class="edu-title">
                           <h4><?php echo htmlspecialchars($edu['degree']); ?><?php if ($edu['field_of_study']): ?> in
-                              <?php echo htmlspecialchars($edu['field_of_study']); ?>     <?php endif; ?>
+                            <?php echo htmlspecialchars($edu['field_of_study']); ?> <?php endif; ?>
                           </h4>
                           <p class="institution"><?php echo htmlspecialchars($edu['institution']); ?></p>
                         </div>
@@ -544,13 +545,13 @@ require_once '../includes/header.php';
             <label for="first_name">First Name</label>
             <input type="text" id="first_name" name="first_name" class="form-control"
               value="<?php echo htmlspecialchars($profile['first_name'] ?? ''); ?>" placeholder="Your first name"
-              required>
+              required pattern="[A-Za-z\s]+" title="Name should only contain letters">
           </div>
           <div class="form-group">
             <label for="last_name">Last Name</label>
             <input type="text" id="last_name" name="last_name" class="form-control"
               value="<?php echo htmlspecialchars($profile['last_name'] ?? ''); ?>" placeholder="Your last name"
-              required>
+              required pattern="[A-Za-z\s]+" title="Name should only contain letters">
           </div>
         </div>
 
@@ -571,7 +572,7 @@ require_once '../includes/header.php';
           <div class="form-group">
             <label for="phone">Phone</label>
             <input type="tel" id="phone" name="phone" class="form-control"
-              value="<?php echo htmlspecialchars($profile['phone'] ?? ''); ?>" placeholder="+1 (123) 456-7890">
+              value="<?php echo htmlspecialchars($profile['phone'] ?? ''); ?>" placeholder="+1 (123) 456-7890" pattern="^\+?[0-9\s\-\(\)]+$" title="Please enter a valid phone number (e.g., +1 234 567 8900)">
           </div>
           <div class="form-group">
             <label for="location">Location</label>
@@ -774,7 +775,7 @@ require_once '../includes/header.php';
 
         <div class="form-group">
           <label for="edu_gpa">GPA (optional)</label>
-          <input type="text" id="edu_gpa" name="edu_gpa" class="form-control" placeholder="e.g., 3.8/4.0">
+          <input type="number" id="edu_gpa" name="edu_gpa" class="form-control" placeholder="e.g., 3.8/4.0" step="0.01" min="0" max="4.0">
         </div>
       </div>
       <div class="modal-footer">
@@ -1462,7 +1463,7 @@ require_once '../includes/header.php';
   }
 
   // Close modal on escape key
-  document.addEventListener('keydown', function (e) {
+  document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       document.querySelectorAll('.modal.active').forEach(modal => {
         modal.classList.remove('active');

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * JobNexus - HR Application Detail View
  * View individual application details
@@ -8,6 +9,7 @@ require_once '../config/config.php';
 require_once '../classes/Database.php';
 require_once '../classes/User.php';
 require_once '../classes/Application.php';
+require_once '../classes/Event.php';
 require_once '../includes/notification-helper.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== ROLE_HR) {
@@ -76,6 +78,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $newStatus,
           $appId
         );
+
+        // Check if this is an interview and create event
+        if ($newStatus === 'interview') {
+          $eventModel = new Event();
+          $interviewDate = $_POST['interview_date'] ?? '';
+          $interviewTime = $_POST['interview_time'] ?? '';
+          $meetingLink = $_POST['meeting_link'] ?? '';
+
+          if ($interviewDate && $interviewTime) {
+            $eventModel->create([
+              'application_id' => $appId,
+              'hr_user_id' => $_SESSION['user_id'],
+              'seeker_user_id' => $application['seeker_id'],
+              'event_title' => 'Interview for ' . $application['job_title'],
+              'event_type' => 'interview',
+              'event_date' => $interviewDate,
+              'event_time' => $interviewTime,
+              'meeting_link' => $meetingLink,
+              'description' => "Interview scheduled via JobNexus. \nNotes: $notes",
+              'timezone' => 'Asia/Karachi' // Default to system timezone
+            ]);
+            $message .= ' Interview scheduled in calendar.';
+          }
+        }
 
         $application['status'] = $newStatus;
         $application['status_notes'] = $notes;
@@ -207,7 +233,7 @@ if (!empty($application['skills'])) {
           <div class="profile-avatar">
             <?php if ($application['profile_photo']): ?>
               <img
-                src="<?php echo BASE_URL; ?>/uploads/photos/<?php echo htmlspecialchars($application['profile_photo']); ?>"
+                src="<?php echo BASE_URL; ?>/uploads/avatars/<?php echo htmlspecialchars($application['profile_photo']); ?>"
                 alt="<?php echo htmlspecialchars($application['applicant_name']); ?>">
             <?php else: ?>
               <?php echo strtoupper(substr($application['first_name'] ?? 'U', 0, 1)); ?>
@@ -320,6 +346,26 @@ if (!empty($application['skills'])) {
               </div>
               <button type="submit" class="btn btn-primary">Update</button>
             </div>
+
+            <div id="interviewDetails" style="display: none; margin-bottom: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+              <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">Interview Details</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="interview_date">Date</label>
+                  <input type="date" id="interview_date" name="interview_date" class="form-control" min="<?php echo date('Y-m-d'); ?>">
+                </div>
+                <div class="form-group">
+                  <label for="interview_time">Time</label>
+                  <input type="time" id="interview_time" name="interview_time" class="form-control">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="meeting_link">Meeting Link</label>
+                <input type="url" id="meeting_link" name="meeting_link" class="form-control" placeholder="https://meet.google.com/...">
+              </div>
+            </div>
+
+
             <div class="form-group">
               <label>Status Notes (optional)</label>
               <textarea name="notes" class="form-control" rows="2"
@@ -494,6 +540,7 @@ if (!empty($application['skills'])) {
 
   .profile-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
   }
@@ -730,5 +777,42 @@ if (!empty($application['skills'])) {
     }
   }
 </style>
+
+<script>
+  (function() {
+    function initInterviewToggle() {
+      const statusSelect = document.querySelector('select[name="status"]');
+      const interviewDetails = document.getElementById('interviewDetails');
+      const dateInput = document.getElementById('interview_date');
+      const timeInput = document.getElementById('interview_time');
+
+      if (!statusSelect || !interviewDetails) return;
+
+      function toggle() {
+        if (statusSelect.value === 'interview') {
+          interviewDetails.style.display = 'block';
+          if (dateInput) dateInput.required = true;
+          if (timeInput) timeInput.required = true;
+        } else {
+          interviewDetails.style.display = 'none';
+          if (dateInput) dateInput.required = false;
+          if (timeInput) timeInput.required = false;
+        }
+      }
+
+      statusSelect.addEventListener('change', toggle);
+
+      // Run immediately in case of pre-fill (and after short delay to be safe)
+      toggle();
+      setTimeout(toggle, 100);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initInterviewToggle);
+    } else {
+      initInterviewToggle();
+    }
+  })();
+</script>
 
 <?php require_once '../includes/footer.php'; ?>

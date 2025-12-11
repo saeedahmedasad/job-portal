@@ -249,6 +249,34 @@ function validateField(field) {
     }
   }
 
+  // HTML5 Pattern Validation
+  if (isValid && field.pattern && value) {
+    const regex = new RegExp('^' + field.pattern + '$');
+    if (!regex.test(value)) {
+      isValid = false;
+      errorMessage = field.title || "Invalid format";
+    }
+  }
+
+  // Number Validation
+  if (isValid && field.type === 'number' && value) {
+    // Check min
+    if (field.min && parseFloat(value) < parseFloat(field.min)) {
+        isValid = false;
+        errorMessage = `Value must be at least ${field.min}`;
+    }
+    // Check max
+    if (isValid && field.max && parseFloat(value) > parseFloat(field.max)) {
+        isValid = false;
+        errorMessage = `Value must be at most ${field.max}`;
+    }
+    // Check valid number
+    if (isValid && isNaN(parseFloat(value))) {
+        isValid = false;
+        errorMessage = "Please enter a valid number";
+    }
+  }
+
   // Update UI
   updateFieldValidation(field, isValid, errorMessage);
 

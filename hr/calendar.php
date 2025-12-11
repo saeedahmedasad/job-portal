@@ -1,4 +1,5 @@
 <?php
+
 /**
  * JobNexus - HR Calendar / Interview Scheduling
  */
@@ -229,7 +230,7 @@ require_once '../includes/header.php';
         <?php
         $logoPath = '../uploads/logos/' . ($company['logo'] ?? '');
         if (!empty($company['logo']) && file_exists($logoPath)):
-          ?>
+        ?>
           <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo $company['logo']; ?>"
             alt="<?php echo htmlspecialchars($company['company_name']); ?>"
             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
@@ -337,7 +338,7 @@ require_once '../includes/header.php';
                 $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $currentDay);
                 $isToday = $dateStr === $today;
                 $hasEvents = isset($eventsByDate[$dateStr]);
-                ?>
+              ?>
                 <div
                   class="calendar-day <?php echo $isToday ? 'today' : ''; ?> <?php echo $hasEvents ? 'has-events clickable' : ''; ?>"
                   <?php if ($hasEvents): ?> onclick="showDayEvents('<?php echo $dateStr; ?>')" <?php endif; ?>>
@@ -364,7 +365,7 @@ require_once '../includes/header.php';
               if ($remainingCells < 7):
                 for ($i = 0; $i < $remainingCells; $i++): ?>
                   <div class="calendar-day empty"></div>
-                <?php endfor;
+              <?php endfor;
               endif;
               ?>
             </div>
@@ -556,8 +557,17 @@ require_once '../includes/header.php';
 
           <div class="form-group">
             <label for="meeting_link">Meeting Link</label>
-            <input type="url" id="meeting_link" name="meeting_link" class="form-control"
-              placeholder="https://zoom.us/j/... or Google Meet link">
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="url" id="meeting_link" name="meeting_link" class="form-control"
+                placeholder="Paste the Google Meet link here...">
+              <a href="https://meet.google.com/new" target="_blank" class="btn btn-outline-primary"
+                title="Create new Google Meet (You will be Host)" style="white-space: nowrap;">
+                <i class="fas fa-video"></i> Create Meet
+              </a>
+            </div>
+            <small class="text-muted" style="display: block; margin-top: 0.25rem; font-size: 0.8rem;">
+              <i class="fas fa-info-circle"></i> Click <strong>Create Meet</strong> to open a new room. You will be the host. Copy the link and paste it here.
+            </small>
           </div>
 
           <div class="form-group">
@@ -1471,7 +1481,12 @@ require_once '../includes/header.php';
   function showDayEvents(dateStr) {
     const events = eventsData[dateStr] || [];
     const date = new Date(dateStr + 'T12:00:00');
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const options = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
     const formattedDate = date.toLocaleDateString('en-US', options);
 
     document.getElementById('dayEventsTitle').textContent = formattedDate;
@@ -1482,7 +1497,11 @@ require_once '../includes/header.php';
     } else {
       events.forEach(event => {
         const eventTime = new Date('2000-01-01T' + event.event_time);
-        const formattedTime = eventTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        const formattedTime = eventTime.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
         const eventType = event.event_type || 'interview';
         const typeLabel = eventType.replace('_', ' ');
 
@@ -1523,7 +1542,7 @@ require_once '../includes/header.php';
   }
 
   // Close modal on escape
-  document.addEventListener('keydown', function (e) {
+  document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       closeScheduleModal();
       closeDayEventsModal();
