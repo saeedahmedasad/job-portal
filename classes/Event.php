@@ -22,11 +22,11 @@ class Event
     $sql = "INSERT INTO events (
             application_id, hr_user_id, seeker_user_id, event_title, event_type,
             event_date, event_time, duration_minutes, timezone, location,
-            meeting_link, meeting_token, description, status
+            meeting_link, description, status
         ) VALUES (
             :application_id, :hr_user_id, :seeker_user_id, :event_title, :event_type,
             :event_date, :event_time, :duration_minutes, :timezone, :location,
-            :meeting_link, :meeting_token, :description, :status
+            :meeting_link, :description, :status
         )";
 
     $stmt = $this->db->prepare($sql);
@@ -42,7 +42,6 @@ class Event
       'timezone' => $data['timezone'] ?? 'UTC',
       'location' => $data['location'] ?? null,
       'meeting_link' => $data['meeting_link'] ?? null,
-      'meeting_token' => $data['meeting_token'] ?? null,
       'description' => $data['description'] ?? null,
       'status' => 'scheduled'
     ]);

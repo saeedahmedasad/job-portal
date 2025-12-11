@@ -278,7 +278,6 @@ CREATE TABLE events (
     timezone VARCHAR(50) DEFAULT 'UTC',
     location VARCHAR(255) NULL,
     meeting_link VARCHAR(500) NULL,
-    meeting_token VARCHAR(64) NULL UNIQUE,
     description TEXT NULL,
     status ENUM('scheduled', 'confirmed', 'completed', 'cancelled', 'rescheduled') DEFAULT 'scheduled',
     reminder_sent TINYINT(1) DEFAULT 0,
