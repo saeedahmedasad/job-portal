@@ -1,4 +1,5 @@
 <?php
+
 /**
  * JobNexus - Home Page
  * Premium Job Portal Landing Page
@@ -7,9 +8,13 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/classes/Job.php';
 require_once __DIR__ . '/classes/Company.php';
+require_once __DIR__ . '/classes/User.php';
+require_once __DIR__ . '/classes/Application.php';
 
 $jobModel = new Job();
 $companyModel = new Company();
+$userModel = new User();
+$appModel = new Application();
 
 // Get featured jobs
 $featuredJobs = $jobModel->getFeatured(6);
@@ -19,9 +24,13 @@ $categories = $jobModel->getCategories();
 
 // Get job stats
 $stats = $jobModel->getStats();
+$companyStats = $companyModel->getStats();
+$userStats = $userModel->getStats();
+$appStats = $appModel->getStats();
 
 // Get recent jobs
 $recentJobs = $jobModel->getActive([], 1, 9);
+
 
 $pageTitle = SITE_TAGLINE;
 include __DIR__ . '/includes/header.php';
@@ -71,13 +80,13 @@ include __DIR__ . '/includes/header.php';
         </button>
       </form>
 
-      <div class="quick-filters">
+      <!-- <div class="quick-filters">
         <button class="quick-filter" data-filter="remote">🏠 Remote</button>
         <button class="quick-filter" data-filter="technology">💻 Technology</button>
         <button class="quick-filter" data-filter="design">🎨 Design</button>
         <button class="quick-filter" data-filter="marketing">📢 Marketing</button>
         <button class="quick-filter" data-filter="finance">💰 Finance</button>
-      </div>
+      </div> -->
     </div>
   </div>
 </section>
@@ -97,21 +106,21 @@ include __DIR__ . '/includes/header.php';
         <div class="stat-icon blue">
           <i class="fas fa-building"></i>
         </div>
-        <div class="stat-value">10K+</div>
+        <div class="stat-value"><?php echo number_format($companyStats['total'] ?? 0); ?>+</div>
         <div class="stat-label">Companies Hiring</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon orange">
           <i class="fas fa-users"></i>
         </div>
-        <div class="stat-value">1M+</div>
+        <div class="stat-value"><?php echo number_format($userStats['seeker_count'] ?? 0); ?>+</div>
         <div class="stat-label">Job Seekers</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon purple">
           <i class="fas fa-handshake"></i>
         </div>
-        <div class="stat-value">50K+</div>
+        <div class="stat-value"><?php echo number_format($appStats['hired'] ?? 0); ?>+</div>
         <div class="stat-label">Successful Hires</div>
       </div>
     </div>
@@ -176,14 +185,14 @@ include __DIR__ . '/includes/header.php';
                 if ($skills):
                   $displaySkills = array_slice($skills, 0, 3);
                   foreach ($displaySkills as $skill):
-                    ?>
+                ?>
                     <span class="tag tag-primary"><?php echo sanitize($skill); ?></span>
                   <?php
                   endforeach;
                   if (count($skills) > 3):
-                    ?>
+                  ?>
                     <span class="tag">+<?php echo count($skills) - 3; ?> more</span>
-                  <?php
+                <?php
                   endif;
                 endif;
                 ?>
@@ -467,7 +476,6 @@ include __DIR__ . '/includes/header.php';
     background: var(--bg-tertiary);
     color: var(--text-secondary);
   }
-
 </style>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

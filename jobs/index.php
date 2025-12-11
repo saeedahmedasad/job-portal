@@ -1,4 +1,5 @@
 <?php
+
 /**
  * JobNexus - Jobs Listing Page
  */
@@ -43,8 +44,8 @@ include __DIR__ . '/../includes/header.php';
                 <h1>Find Your Perfect Job</h1>
                 <?php if (!empty($filters['search'])): ?>
                     <p class="search-results-info">
-                        <span class="results-count"><?php echo number_format($totalJobs); ?></span> 
-                        <?php echo $totalJobs === 1 ? 'job' : 'jobs'; ?> found for 
+                        <span class="results-count"><?php echo number_format($totalJobs); ?></span>
+                        <?php echo $totalJobs === 1 ? 'job' : 'jobs'; ?> found for
                         "<span class="search-term"><?php echo sanitize($filters['search']); ?></span>"
                     </p>
                 <?php else: ?>
@@ -52,32 +53,31 @@ include __DIR__ . '/../includes/header.php';
                 <?php endif; ?>
             </div>
         </div>
-        
+
         <!-- Main Search Form -->
         <form class="search-form" method="GET" action="">
             <div class="search-box">
                 <div class="search-input-group">
                     <i class="fas fa-search"></i>
-                    <input 
-                        type="text" 
-                        name="search" 
-                        class="search-input" 
+                    <input
+                        type="text"
+                        name="search"
+                        class="search-input"
                         placeholder="Job title, keywords, or company..."
-                        value="<?php echo sanitize($filters['search']); ?>"
-                    >
+                        value="<?php echo sanitize($filters['search']); ?>">
                 </div>
                 <button type="submit" class="btn btn-primary search-btn">
                     <i class="fas fa-search"></i> Search
                 </button>
             </div>
         </form>
-        
+
         <div class="jobs-layout">
             <!-- Filters Sidebar -->
             <aside class="filters-sidebar">
                 <form id="filtersForm" method="GET" action="">
                     <input type="hidden" name="search" value="<?php echo sanitize($filters['search']); ?>">
-                    
+
                     <!-- Category Filter -->
                     <div class="filter-section">
                         <h3 class="filter-title">Category</h3>
@@ -95,7 +95,7 @@ include __DIR__ . '/../includes/header.php';
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <!-- Location Type Filter -->
                     <div class="filter-section">
                         <h3 class="filter-title">Location Type</h3>
@@ -112,7 +112,7 @@ include __DIR__ . '/../includes/header.php';
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <!-- Job Type Filter -->
                     <div class="filter-section">
                         <h3 class="filter-title">Job Type</h3>
@@ -129,7 +129,7 @@ include __DIR__ . '/../includes/header.php';
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <!-- Experience Level Filter -->
                     <div class="filter-section">
                         <h3 class="filter-title">Experience Level</h3>
@@ -146,12 +146,12 @@ include __DIR__ . '/../includes/header.php';
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
                     <a href="<?php echo BASE_URL; ?>/jobs/" class="btn btn-ghost btn-block mt-2">Clear All</a>
                 </form>
             </aside>
-            
+
             <!-- Jobs List -->
             <div class="jobs-content">
                 <!-- Sort Bar -->
@@ -169,7 +169,7 @@ include __DIR__ . '/../includes/header.php';
                         </select>
                     </div>
                 </div>
-                
+
                 <!-- Jobs Grid -->
                 <?php if (!empty($jobs)): ?>
                     <div class="jobs-grid">
@@ -181,7 +181,7 @@ include __DIR__ . '/../includes/header.php';
                                 <?php if ($job['is_urgent']): ?>
                                     <span class="job-badge urgent">Urgent</span>
                                 <?php endif; ?>
-                                
+
                                 <div class="job-card-header">
                                     <div class="job-card-logo">
                                         <?php if ($job['logo']): ?>
@@ -195,7 +195,7 @@ include __DIR__ . '/../includes/header.php';
                                         <p class="job-card-company"><?php echo sanitize($job['company_name']); ?></p>
                                     </div>
                                 </div>
-                                
+
                                 <div class="job-card-meta">
                                     <span class="tag tag-<?php echo $job['location_type']; ?>">
                                         <i class="fas fa-<?php echo $job['location_type'] === 'remote' ? 'home' : ($job['location_type'] === 'hybrid' ? 'building' : 'map-marker-alt'); ?>"></i>
@@ -212,23 +212,23 @@ include __DIR__ . '/../includes/header.php';
                                         </span>
                                     <?php endif; ?>
                                 </div>
-                                
+
                                 <?php if ($job['skills_required']): ?>
                                     <div class="job-card-tags">
-                                        <?php 
+                                        <?php
                                         $skills = is_array($job['skills_required']) ? $job['skills_required'] : json_decode($job['skills_required'], true);
                                         if ($skills):
                                             $displaySkills = array_slice($skills, 0, 3);
-                                            foreach ($displaySkills as $skill): 
+                                            foreach ($displaySkills as $skill):
                                         ?>
-                                            <span class="tag tag-primary"><?php echo sanitize($skill); ?></span>
-                                        <?php 
+                                                <span class="tag tag-primary"><?php echo sanitize($skill); ?></span>
+                                        <?php
                                             endforeach;
-                                        endif; 
+                                        endif;
                                         ?>
                                     </div>
                                 <?php endif; ?>
-                                
+
                                 <div class="job-card-footer">
                                     <?php if ($job['show_salary'] && $job['salary_min']): ?>
                                         <span class="job-card-salary">
@@ -245,7 +245,7 @@ include __DIR__ . '/../includes/header.php';
                             </a>
                         <?php endforeach; ?>
                     </div>
-                    
+
                     <!-- Pagination -->
                     <?php if ($totalPages > 1): ?>
                         <div class="pagination">
@@ -254,31 +254,31 @@ include __DIR__ . '/../includes/header.php';
                                     <i class="fas fa-chevron-left"></i>
                                 </a>
                             <?php endif; ?>
-                            
-                            <?php 
+
+                            <?php
                             $startPage = max(1, $page - 2);
                             $endPage = min($totalPages, $page + 2);
-                            
+
                             if ($startPage > 1): ?>
                                 <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => 1])); ?>" class="pagination-item">1</a>
                                 <?php if ($startPage > 2): ?>
                                     <span class="pagination-item disabled">...</span>
                                 <?php endif; ?>
                             <?php endif; ?>
-                            
+
                             <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
                                 <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $i])); ?>" class="pagination-item <?php echo $i === $page ? 'active' : ''; ?>">
                                     <?php echo $i; ?>
                                 </a>
                             <?php endfor; ?>
-                            
+
                             <?php if ($endPage < $totalPages): ?>
                                 <?php if ($endPage < $totalPages - 1): ?>
                                     <span class="pagination-item disabled">...</span>
                                 <?php endif; ?>
                                 <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $totalPages])); ?>" class="pagination-item"><?php echo $totalPages; ?></a>
                             <?php endif; ?>
-                            
+
                             <?php if ($page < $totalPages): ?>
                                 <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>" class="pagination-item">
                                     <i class="fas fa-chevron-right"></i>
@@ -315,208 +315,208 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <style>
-.jobs-page {
-    padding: 100px 0 var(--spacing-3xl);
-    min-height: 100vh;
-}
-
-.jobs-header {
-    text-align: center;
-    margin-bottom: var(--spacing-xl);
-}
-
-.jobs-header h1 {
-    font-size: 2.5rem;
-    margin-bottom: var(--spacing-sm);
-}
-
-.jobs-header p {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-}
-
-.search-form {
-    max-width: 800px;
-    margin: 0 auto var(--spacing-xl);
-}
-
-.search-form .search-box {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-xl);
-    padding: 0.5rem;
-    display: flex;
-    gap: var(--spacing-sm);
-}
-
-.jobs-layout {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: var(--spacing-xl);
-}
-
-/* Filters Sidebar */
-.filters-sidebar {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
-    height: fit-content;
-    position: sticky;
-    top: 90px;
-}
-
-.filter-section {
-    margin-bottom: var(--spacing-lg);
-    padding-bottom: var(--spacing-lg);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.filter-section:last-of-type {
-    border-bottom: none;
-}
-
-.filter-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: var(--spacing-md);
-    color: var(--text-primary);
-}
-
-.filter-options {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.filter-option {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    cursor: pointer;
-    padding: var(--spacing-xs) 0;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    transition: color var(--transition-fast);
-}
-
-.filter-option:hover {
-    color: var(--text-primary);
-}
-
-.filter-option input {
-    accent-color: var(--accent-primary);
-}
-
-.filter-option span:first-of-type {
-    flex: 1;
-}
-
-.filter-count {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    background: var(--bg-tertiary);
-    padding: 0.125rem 0.5rem;
-    border-radius: var(--radius-full);
-}
-
-/* Jobs Content */
-.jobs-content {
-    min-height: 500px;
-}
-
-.jobs-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-lg);
-}
-
-.jobs-count {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-}
-
-.jobs-sort {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-}
-
-.jobs-sort label {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-.jobs-sort select {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0.5rem 1rem;
-    color: var(--text-primary);
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-.job-badge {
-    position: absolute;
-    top: var(--spacing-md);
-    right: var(--spacing-md);
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: var(--radius-full);
-    text-transform: uppercase;
-}
-
-.job-badge.featured {
-    background: rgba(0, 230, 118, 0.15);
-    color: var(--accent-primary);
-}
-
-.job-badge.urgent {
-    background: rgba(255, 82, 82, 0.15);
-    color: var(--error);
-}
-
-@media (max-width: 1024px) {
-    .jobs-layout {
-        grid-template-columns: 1fr;
+    .jobs-page {
+        padding: 100px 0 var(--spacing-3xl);
+        min-height: 100vh;
     }
-    
-    .filters-sidebar {
-        position: static;
-    }
-}
 
-@media (max-width: 640px) {
+    .jobs-header {
+        text-align: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
     .jobs-header h1 {
-        font-size: 1.75rem;
+        font-size: 2.5rem;
+        margin-bottom: var(--spacing-sm);
     }
-    
-    .jobs-toolbar {
+
+    .jobs-header p {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+    }
+
+    .search-form {
+        max-width: 800px;
+        margin: 0 auto var(--spacing-xl);
+    }
+
+    .search-form .search-box {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xl);
+        padding: 0.5rem;
+        display: flex;
+        gap: var(--spacing-sm);
+    }
+
+    .jobs-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: var(--spacing-xl);
+    }
+
+    /* Filters Sidebar */
+    .filters-sidebar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-lg);
+        height: fit-content;
+        position: sticky;
+        top: 90px;
+    }
+
+    .filter-section {
+        margin-bottom: var(--spacing-lg);
+        padding-bottom: var(--spacing-lg);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .filter-section:last-of-type {
+        border-bottom: none;
+    }
+
+    .filter-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: var(--spacing-md);
+        color: var(--text-primary);
+    }
+
+    .filter-options {
+        display: flex;
         flex-direction: column;
-        gap: var(--spacing-md);
-        align-items: flex-start;
+        gap: var(--spacing-sm);
+        max-height: 200px;
+        overflow-y: auto;
     }
-}
+
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        cursor: pointer;
+        padding: var(--spacing-xs) 0;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        transition: color var(--transition-fast);
+    }
+
+    .filter-option:hover {
+        color: var(--text-primary);
+    }
+
+    .filter-option input {
+        accent-color: var(--accent-primary);
+    }
+
+    .filter-option span:first-of-type {
+        flex: 1;
+    }
+
+    .filter-count {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        background: var(--bg-tertiary);
+        padding: 0.125rem 0.5rem;
+        border-radius: var(--radius-full);
+    }
+
+    /* Jobs Content */
+    .jobs-content {
+        min-height: 500px;
+    }
+
+    .jobs-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .jobs-count {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .jobs-sort {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+
+    .jobs-sort label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .jobs-sort select {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 0.5rem 1rem;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+    .job-badge {
+        position: absolute;
+        top: var(--spacing-md);
+        right: var(--spacing-md);
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: var(--radius-full);
+        text-transform: uppercase;
+    }
+
+    .job-badge.featured {
+        background: rgba(0, 230, 118, 0.15);
+        color: var(--accent-primary);
+    }
+
+    .job-badge.urgent {
+        background: rgba(255, 82, 82, 0.15);
+        color: var(--error);
+    }
+
+    @media (max-width: 1024px) {
+        .jobs-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .filters-sidebar {
+            position: static;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .jobs-header h1 {
+            font-size: 1.75rem;
+        }
+
+        .jobs-toolbar {
+            flex-direction: column;
+            gap: var(--spacing-md);
+            align-items: flex-start;
+        }
+    }
 </style>
 
 <script>
-function updateSort(value) {
-    const url = new URL(window.location);
-    url.searchParams.set('sort', value);
-    window.location = url;
-}
+    function updateSort(value) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', value);
+        window.location = url;
+    }
 
-// Auto-submit filters on change
-document.querySelectorAll('.filter-option input').forEach(input => {
-    input.addEventListener('change', () => {
-        document.getElementById('filtersForm').submit();
+    // Auto-submit filters on change
+    document.querySelectorAll('.filter-option input').forEach(input => {
+        input.addEventListener('change', () => {
+            document.getElementById('filtersForm').submit();
+        });
     });
-});
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

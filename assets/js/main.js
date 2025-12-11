@@ -329,31 +329,78 @@ function initDropdowns() {
 // =====================================================
 // Search & Filters
 // =====================================================
+// Search & Filters
+// =====================================================
 function initSearchFilters() {
-  const searchForm = document.querySelector(".search-box");
-  if (!searchForm) return;
+  const searchForm = document.querySelector(".search-box"); // Homepage & Jobs page search
+  const filtersForm = document.getElementById("filtersForm"); // Jobs page sidebar
 
-  const searchInput = searchForm.querySelector(".search-input");
-  const categorySelect = searchForm.querySelector('select[name="category"]');
-  const sortSelect = searchForm.querySelector('select[name="sort"]');
+  if (!searchForm && !filtersForm) return;
 
   // Quick filters
   document.querySelectorAll(".quick-filter").forEach((filter) => {
-    filter.addEventListener("click", function () {
+    filter.addEventListener("click", function (e) {
+      e.preventDefault();
+      
       document
         .querySelectorAll(".quick-filter")
         .forEach((f) => f.classList.remove("active"));
       this.classList.add("active");
 
-      // Update search based on filter
       const filterType = this.dataset.filter;
-      if (categorySelect && filterType) {
-        categorySelect.value = filterType;
+      
+      // 1. Handle Homepage (dropdowns in searchForm)
+      const homeCatSelect = searchForm ? searchForm.querySelector('select[name="category"]') : null;
+      const homeLocSelect = searchForm ? searchForm.querySelector('select[name="location_type"]') : null;
+
+      if (homeCatSelect) {
+        // ... (Existing homepage logic)
+        if (homeCatSelect) homeCatSelect.value = "";
+        if (homeLocSelect) homeLocSelect.value = "";
+
+        if (filterType === 'remote' && homeLocSelect) {
+          homeLocSelect.value = 'remote';
+        } else if (homeCatSelect && filterType) {
+          let found = false;
+          Array.from(homeCatSelect.options).forEach(option => {
+            if (option.text.toLowerCase().includes(filterType.toLowerCase())) {
+              homeCatSelect.value = option.value;
+              found = true;
+            }
+          });
+          if (!found) homeCatSelect.value = filterType;
+        }
+        if (searchForm) searchForm.submit();
+        return;
       }
 
-      // Trigger search
-      if (searchForm) {
-        searchForm.dispatchEvent(new Event("submit"));
+      // 2. Handle Jobs Page (Radios in filtersForm)
+      if (filtersForm) {
+        // Reset radios
+        const catRadios = filtersForm.querySelectorAll('input[name="category"]');
+        const locRadios = filtersForm.querySelectorAll('input[name="location_type"]');
+        
+        // Uncheck all first
+        catRadios.forEach(r => r.checked = false);
+        locRadios.forEach(r => r.checked = false);
+
+        if (filterType === 'remote') {
+            // Select Remote radio
+            const remoteRadio = filtersForm.querySelector('input[name="location_type"][value="remote"]');
+            if (remoteRadio) remoteRadio.checked = true;
+        } else {
+            // Find category radio by text label
+            let found = false;
+            // First check labels nearby
+            catRadios.forEach(radio => {
+                const label = radio.parentElement.querySelector('span:first-of-type'); // Assuming <span>Label</span>
+                if (label && label.innerText.toLowerCase().includes(filterType.toLowerCase())) {
+                    radio.checked = true;
+                    found = true;
+                }
+            });
+        }
+        filtersForm.submit();
       }
     });
   });
