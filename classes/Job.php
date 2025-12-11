@@ -374,11 +374,19 @@ class Job
   }
 
   /**
-   * Get all categories
+   * Get all categories with active job counts
    */
   public function getCategories(): array
   {
-    $sql = "SELECT * FROM job_categories WHERE is_active = 1 ORDER BY name ASC";
+    $sql = "SELECT c.*, 
+            (SELECT COUNT(*) FROM jobs j 
+             LEFT JOIN companies comp ON j.company_id = comp.id 
+             WHERE j.category_id = c.id 
+             AND j.status = 'active'
+             AND comp.verification_status = 'verified') as job_count 
+            FROM job_categories c 
+            WHERE c.is_active = 1 
+            ORDER BY c.name ASC";
     $stmt = $this->db->query($sql);
     return $stmt->fetchAll();
   }

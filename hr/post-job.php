@@ -1,4 +1,5 @@
 <?php
+
 /**
  * JobNexus - Post New Job
  * HR/Recruiter job posting form
@@ -20,6 +21,8 @@ $userModel = new User();
 $jobModel = new Job();
 $companyModel = new Company();
 
+$categories = $jobModel->getCategories();
+
 $hr = $userModel->findById($_SESSION['user_id']);
 
 // Get HR's company using hr_user_id (companies table references users, not vice versa)
@@ -37,7 +40,7 @@ if (!$company) {
 if ($company['verification_status'] !== 'verified') {
   $pageTitle = 'Account Pending Verification';
   require_once '../includes/header.php';
-  ?>
+?>
   <div class="verification-pending-container">
     <div class="pending-card">
       <div class="pending-icon">
@@ -141,7 +144,7 @@ if ($company['verification_status'] !== 'verified') {
       box-shadow: 0 5px 20px rgba(0, 230, 118, 0.3);
     }
   </style>
-  <?php
+<?php
   require_once '../includes/footer.php';
   exit;
 }
@@ -162,6 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $salaryMin = !empty($_POST['salary_min']) ? (int) $_POST['salary_min'] : null;
   $salaryMax = !empty($_POST['salary_max']) ? (int) $_POST['salary_max'] : null;
   $skills = trim($_POST['skills'] ?? '');
+  $category_id = !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null;
   $deadline = $_POST['deadline'] ?? '';
   $vacancies = (int) ($_POST['vacancies'] ?? 1);
   $isRemote = isset($_POST['is_remote']) ? 1 : 0;
@@ -170,6 +174,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // Validation
   if (empty($title)) {
     $errors[] = 'Job title is required.';
+  }
+  if (empty($category_id)) {
+    $errors[] = 'Job category is required.';
   }
   if (empty($description)) {
     $errors[] = 'Job description is required.';
@@ -194,6 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       'company_id' => $company['id'],
       'posted_by' => $_SESSION['user_id'],
       'title' => $title,
+      'category_id' => $category_id,
       'description' => $description,
       'requirements' => $requirements,
       'benefits' => $benefits,
@@ -236,7 +244,7 @@ require_once '../includes/header.php';
         <?php
         $logoPath = '../uploads/logos/' . ($company['logo'] ?? '');
         if (!empty($company['logo']) && file_exists($logoPath)):
-          ?>
+        ?>
           <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo $company['logo']; ?>"
             alt="<?php echo htmlspecialchars($company['company_name']); ?>"
             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
@@ -335,10 +343,23 @@ require_once '../includes/header.php';
                     Contract</option>
                   <option value="internship" <?php echo ($_POST['job_type'] ?? '') === 'internship' ? 'selected' : ''; ?>>
                     Internship</option>
-                  <option value="temporary" <?php echo ($_POST['job_type'] ?? '') === 'temporary' ? 'selected' : ''; ?>>
-                    Temporary</option>
+                  <option value="freelance" <?php echo ($_POST['job_type'] ?? '') === 'freelance' ? 'selected' : ''; ?>>
+                    Freelance</option>
                 </select>
               </div>
+
+              <div class="form-group">
+                <label for="category_id">Job Category <span class="required">*</span></label>
+                <select id="category_id" name="category_id" class="form-control" required>
+                  <option value="">Select Category</option>
+                  <?php foreach ($categories as $cat): ?>
+                    <option value="<?php echo $cat['id']; ?>" <?php echo ($_POST['category_id'] ?? '') == $cat['id'] ? 'selected' : ''; ?>>
+                      <?php echo htmlspecialchars($cat['name']); ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
               <div class="form-group">
                 <label for="experience_level">Experience Level</label>
                 <select id="experience_level" name="experience_level" class="form-control">

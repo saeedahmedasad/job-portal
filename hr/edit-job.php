@@ -1,4 +1,5 @@
 <?php
+
 /**
  * JobNexus - Edit Job
  * HR/Recruiter job editing form
@@ -19,6 +20,8 @@ $db = Database::getInstance()->getConnection();
 $userModel = new User();
 $jobModel = new Job();
 $companyModel = new Company();
+
+$categories = $jobModel->getCategories();
 
 $hr = $userModel->findById($_SESSION['user_id']);
 
@@ -68,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $salaryMin = !empty($_POST['salary_min']) ? (float) $_POST['salary_min'] : null;
   $salaryMax = !empty($_POST['salary_max']) ? (float) $_POST['salary_max'] : null;
   $skills = trim($_POST['skills'] ?? '');
+  $category_id = !empty($_POST['category_id']) ? (int) $_POST['category_id'] : null;
   $deadline = $_POST['deadline'] ?? '';
   $vacancies = (int) ($_POST['vacancies'] ?? 1);
   $status = $_POST['status'] ?? 'active';
@@ -102,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Update job
     $sql = "UPDATE jobs SET 
               title = ?,
+              category_id = ?,
               description = ?,
               requirements = ?,
               responsibilities = ?,
@@ -122,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $db->prepare($sql);
     $result = $stmt->execute([
       $title,
+      $category_id,
       $description,
       $requirements,
       $responsibilities,
@@ -156,6 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Prepare form values (from POST or existing job)
 $formData = [
   'title' => $_POST['title'] ?? $job['title'] ?? '',
+  'category_id' => $_POST['category_id'] ?? $job['category_id'] ?? '',
   'description' => $_POST['description'] ?? $job['description'] ?? '',
   'requirements' => $_POST['requirements'] ?? $job['requirements'] ?? '',
   'responsibilities' => $_POST['responsibilities'] ?? $job['responsibilities'] ?? '',
@@ -181,13 +188,13 @@ require_once '../includes/header.php';
   <aside class="dashboard-sidebar">
     <div class="sidebar-header">
       <div class="hr-avatar">
-        <?php 
+        <?php
         $logoPath = '../uploads/logos/' . ($company['logo'] ?? '');
-        if (!empty($company['logo']) && file_exists($logoPath)): 
+        if (!empty($company['logo']) && file_exists($logoPath)):
         ?>
-          <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo $company['logo']; ?>" 
-               alt="<?php echo htmlspecialchars($company['company_name']); ?>"
-               style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+          <img src="<?php echo BASE_URL; ?>/uploads/logos/<?php echo $company['logo']; ?>"
+            alt="<?php echo htmlspecialchars($company['company_name']); ?>"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
         <?php else: ?>
           <?php echo strtoupper(substr($company['company_name'] ?? 'HR', 0, 2)); ?>
         <?php endif; ?>
@@ -287,6 +294,19 @@ require_once '../includes/header.php';
                     Freelance</option>
                 </select>
               </div>
+
+              <div class="form-group">
+                <label for="category_id">Job Category <span class="required">*</span></label>
+                <select id="category_id" name="category_id" class="form-control" required>
+                  <option value="">Select Category</option>
+                  <?php foreach ($categories as $cat): ?>
+                    <option value="<?php echo $cat['id']; ?>" <?php echo $formData['category_id'] == $cat['id'] ? 'selected' : ''; ?>>
+                      <?php echo htmlspecialchars($cat['name']); ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
               <div class="form-group">
                 <label for="experience_level">Experience Level</label>
                 <select id="experience_level" name="experience_level" class="form-control">
